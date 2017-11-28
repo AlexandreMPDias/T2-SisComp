@@ -4,20 +4,20 @@
 
 #define BIN_MASK 0x01
 
-void checkNegative(int value);
+void checkNegative(ent_t value);
 
-int getBitAt_LE(int binario, int pos){
+ent_t getBitAt_LE(ent_t binario, int pos){
     checkNegative(pos);
     return ((binario >> pos) & BIN_MASK);
 }
 
-int getBitAt_BE(int binario, int pos){
+ent_t getBitAt_BE(ent_t binario, int pos){
     checkNegative(pos);
     return getBitAt_LE(binario, 32-pos);
 }
 
-int getBitInRange_LE(int binario, int from, int to){
-    unsigned int val = binario;
+ent_t getBitInRange_LE(ent_t binario, int from, int to){
+    ent_t val = binario;
     checkNegative(from);
     checkNegative(to);
     int t,f;
@@ -37,11 +37,11 @@ int getBitInRange_LE(int binario, int from, int to){
     return val;
 }
 
-int getBitInRange_BE(int binario, int from, int to){
+ent_t getBitInRange_BE(ent_t binario, int from, int to){
     getBitInRange_LE(binario, 32 - from, 32 - to);
 }
 
-void checkNegative(int value){
+void checkNegative(ent_t value){
     if(value < 0){
         printf("Binario: Recebendo valor de posicao negativa.\nEncerrando execucao.\n");
         exit(1);
@@ -65,4 +65,23 @@ void printBits(size_t const size, void const * const ptr)
         }
     }
     puts("");
+}
+
+ent_t switch_BitAt(ent_t bin, int pos, bool value){
+    ent_t newbin = 1L << pos;
+    if(value == 1){
+        return bin | newbin;
+    }
+    else{
+        return bin & newbin;
+    }
+
+}
+
+ent_t turnon_BitAt(ent_t bin, int pos){
+    return switch_BitAt(bin, pos, true);
+}
+
+ent_t turnoff_BitAt(ent_t bin, int pos){
+    return switch_BitAt(bin, pos, false);
 }

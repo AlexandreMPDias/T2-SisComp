@@ -1,14 +1,15 @@
 #ifndef BINARIO_H
 #define BINARIO_H
 #include <stdlib.h>
+#include "auxiliar.h"
 
 /**
  * Retorna o valor do bit na posicao indicada.
  * @param binário: o valor em binário inicial.
  * @param pos: posicao do bit no vetor de bit.
  */
-int getBitAt_LE(int binario, int pos);
-int getBitAt_BE(int binario, int pos);
+ent_t getBitAt_LE(ent_t binario, int pos);
+ent_t getBitAt_BE(ent_t binario, int pos);
 
 /**
  * Coleta os bits em um range de {to} até {from}
@@ -16,8 +17,12 @@ int getBitAt_BE(int binario, int pos);
  * @param to: ultimo bit da faixa de bits desejada.
  * @param from: primeiro bit da faixa de bits desejada. 
  */
-int getBitInRange_LE(int binario, int from, int to);
-int getBitInRange_BE(int binario, int from, int to);
+ent_t getBitInRange_LE(ent_t binario, int from, int to);
+ent_t getBitInRange_BE(ent_t binario, int from, int to);
+
+
+ent_t turnon_BitAt(ent_t bin, int pos);
+ent_t turnoff_BitAt(ent_t bin, int pos);
 
 /**
  * Imprime na tela um valor em binário. Assumindo Little Endian.

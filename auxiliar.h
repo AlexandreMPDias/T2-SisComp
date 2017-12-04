@@ -3,6 +3,9 @@
 
 typedef unsigned long ent_t;
 
+typedef unsigned int v_addr;
+typedef unsigned int f_addr;
+
 typedef char bool;
 
 #define true 1

@@ -64,3 +64,12 @@ void foi_modificada(ent_t* entrada_tabela);
 void referencia_expirada(ent_t* entrada_tabela);
 
 void modificacao_expirada(ent_t* entrada_tabela);
+
+void virtual_address(v_addr addr, int *page_number, int *offset){
+    *page_number = addr >> 11;
+    *offset = 0x111 & addr;
+}
+void physical_address(f_addr addr, int *page_number, int *offset){
+    *page_number = addr & 0x0111 1000;
+    *offset = 0x111 & addr;
+}

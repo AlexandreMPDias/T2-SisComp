@@ -19,12 +19,12 @@ int extrair(int informacao, ent_t entrada_tabela);
 ent_t criar_entrada(int page_frame_number, int esta_na_ram, int controle_de_acesso);
 
 void foi_referenciada(ent_t* entrada_tabela);
-
 void foi_modificada(ent_t* entrada_tabela);
-
 void referencia_expirada(ent_t* entrada_tabela);
-
 void modificacao_expirada(ent_t* entrada_tabela);
+
+void virtual_address(v_addr addr, int *page_number, int *offset);
+void physical_address(f_addr addr, int *page_number, int *offset);
 
 
 #endif

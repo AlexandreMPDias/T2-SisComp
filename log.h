@@ -24,7 +24,17 @@ static unsigned int __debugLevel__ = 10000;
 
 #define PRE __FILE__,__func__
 
-
+/**
+ * debug
+ * Funcao criada para gerar outputs no codigo, e facilitar, assim, o debug.
+ * 
+ * @param file : nome do arquivo em que esta funcao esta sendo chamada.
+ * @param func : nome da funcao em que esta funcao esta sendo chamada.
+ * @param debugLevel : nivel de debug. Podendo ser 1 ou mais.
+ * @param fmt : formato que devera ser escrito o log
+ * @param ... : argumentos inseridos no log.
+ * 
+ */
 void debug(const char* file, const char* func,  unsigned  int debugLevel, const char *fmt, ...);
 
 

@@ -5,9 +5,10 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 #define NUMBEROFPROCESS 4
-char **process_names={"compilador.c","compressor.c","matriz.c","simulador.c"};
+char **process_names={"compilador.log","compressor.log","matriz.log","simulador.log"};
 int *process_shm={8000,8200,8400,8600};
 void create_process(char* arquivo,int shm);
+
 int main(void){
 	int i;
 	if( signal( SIGUSR2, sig_handler ) == SIG_ERR )

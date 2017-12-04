@@ -1,0 +1,44 @@
+			[ Page_structure > Create_cache ]: Cache criado com tamanho [ 5 ].
+			[ Page_structure > Access_addr ]: Inserindo Nova Entrada no Cache. Preenchimento = [1/5]
+		[ Temp > Main ]: 1 - 4
+			[ Page_structure > Access_addr ]: Inserindo Nova Entrada no Cache. Preenchimento = [2/5]
+		[ Temp > Main ]: 2 - 6
+			[ Page_structure > Access_addr ]: Inserindo Nova Entrada no Cache. Preenchimento = [3/5]
+		[ Temp > Main ]: 3 - 8
+			[ Page_structure > Access_addr ]: Inserindo Nova Entrada no Cache. Preenchimento = [4/5]
+		[ Temp > Main ]: 4 - 10
+			[ Page_structure > Access_addr ]: Inserindo Nova Entrada no Cache. Preenchimento = [5/5]
+		[ Temp > Main ]: 5 - 12
+			[ Page_structure > Is_inside_cache ]: Endereco fora do Cache.
+			[ Page_structure > Access_addr ]: Cache cheio. Endereco Novo. Trocando Entradas.
+		[ Temp > Main ]: 6 - 14
+			[ Page_structure > Is_inside_cache ]: Endereco fora do Cache.
+			[ Page_structure > Access_addr ]: Cache cheio. Endereco Novo. Trocando Entradas.
+		[ Temp > Main ]: 7 - 16
+			[ Page_structure > Is_inside_cache ]: Endereco fora do Cache.
+			[ Page_structure > Access_addr ]: Cache cheio. Endereco Novo. Trocando Entradas.
+		[ Temp > Main ]: 8 - 18
+			[ Page_structure > Is_inside_cache ]: Endereco dentro do Cache.
+			[ Page_structure > Is_inside_cache ]: Endereco dentro do Cache.
+			[ Page_structure > Access_addr ]: Cache cheio. Endereco Repetido. Atualizando Frequencia.
+		[ Temp > Main ]: 1 - 4
+			[ Page_structure > Is_inside_cache ]: Endereco dentro do Cache.
+			[ Page_structure > Is_inside_cache ]: Endereco dentro do Cache.
+			[ Page_structure > Access_addr ]: Cache cheio. Endereco Repetido. Atualizando Frequencia.
+		[ Temp > Main ]: 2 - 6
+			[ Page_structure > Is_inside_cache ]: Endereco dentro do Cache.
+			[ Page_structure > Is_inside_cache ]: Endereco dentro do Cache.
+			[ Page_structure > Access_addr ]: Cache cheio. Endereco Repetido. Atualizando Frequencia.
+		[ Temp > Main ]: 3 - 8
+			[ Page_structure > Is_inside_cache ]: Endereco dentro do Cache.
+			[ Page_structure > Is_inside_cache ]: Endereco dentro do Cache.
+			[ Page_structure > Access_addr ]: Cache cheio. Endereco Repetido. Atualizando Frequencia.
+		[ Temp > Main ]: 3 - 8
+			[ Page_structure > Is_inside_cache ]: Endereco dentro do Cache.
+			[ Page_structure > Is_inside_cache ]: Endereco dentro do Cache.
+			[ Page_structure > Access_addr ]: Cache cheio. Endereco Repetido. Atualizando Frequencia.
+		[ Temp > Main ]: 3 - 8
+			[ Page_structure > Is_inside_cache ]: Endereco dentro do Cache.
+			[ Page_structure > Is_inside_cache ]: Endereco dentro do Cache.
+			[ Page_structure > Access_addr ]: Cache cheio. Endereco Repetido. Atualizando Frequencia.
+		[ Temp > Main ]: 3 - 8

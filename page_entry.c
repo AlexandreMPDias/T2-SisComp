@@ -52,9 +52,9 @@ int extrair(int informacao, ent_t entrada_tabela){
     }
 }
 
-ent_t criar_entrada(unsigned int page_frame_number, int esta_na_ram, int controle_de_acesso){
-    long frame_mask = 4 + PROTECTION_LENGTH + 5;
-    ent_t bitvec = (page_frame_number << frame_mask) >> frame_mask;
+ent_t criar_entrada(p_int page_frame_number, p_int esta_na_ram, p_int controle_de_acesso){
+    p_int frame_mask = 4 + PROTECTION_LENGTH + 5;
+    return 0;
 }
 
 void foi_referenciada(ent_t* entrada_tabela);

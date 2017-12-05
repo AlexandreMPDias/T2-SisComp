@@ -2,6 +2,10 @@
 #define AUX_H
 #include "log.h"
 
+#define Kilobytes 8192
+
+#define PAGE_PER_FRAME_SIZE 16 * Kilobytes
+
 typedef unsigned int ent_t;
 
 typedef unsigned int un_int;

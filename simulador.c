@@ -30,6 +30,12 @@
 #define _right_			0x0000ffff
 #define _max_			0xffffffff
 
+//----->> estrutura com informaçoes sobre o page-fault
+typedef struct Fault_Info__{
+	int pid;
+	u_short virtual_page;
+}Fault_Info;
+
 //---->> Variaveis Globais
 
 /*
@@ -39,16 +45,8 @@ int* pair_pid[2];
 
 
 int fault_key=7100, pair_key=7200;
-
-
 int process_key;
 int	process_shm[_n_of_process_] = { 8000 , 10000 , 12000 , 14000 };
-
-//----->> estrutura com informaçoes sobre o page-fault
-typedef struct Fault_Info__{
-	int pid;
-	u_short virtual_page;
-}Fault_Info;
 
 
 //---->> Funções utilizadas
@@ -230,6 +228,7 @@ u_int get_segmento(pid_t pid){
 }
 
 u_short to_side(u_int valor, int side){
+	u_int a = (valor & side);
 	if(side == _left_){
 		return (u_short)( (valor & _left_ ) >> 16);
 	}

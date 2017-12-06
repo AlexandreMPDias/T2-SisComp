@@ -195,11 +195,15 @@ bool trans(pid_t pid, u_short i, u_short offset, char rw){
 	//percorrer table de memoria compartilhada checando se possui mapeamento
 	int 	segmento = get_segmento(pid);
 	u_int	entry = look_table(segmento, i, _left_);
+	long	sleeper = (long)(pid & 0x00000FFF);
 
 
 	if(entry == _max_){
 		//se nao, avisa o GM que houve pagefault
 		//salva o numero do processo requerinte e pagina virtual nao mapeada em uma outra memoria compartilhada(precisa ser criada pelo processo pai)
+		if(isLocked_info()){
+
+		}
 		kill(ppid(), SIGUSR1);
 		raise(SIGSTOP);
 		return false;
@@ -275,9 +279,9 @@ void unlock_info(){
 	shd_info->pid = 0;
 }
 
-bool isUnlocked_info(){
+bool isLocked_info(){
 	if(shd_info->pid == 0){
-		return true;
+		return false;
 	}
-	return false;
+	return true;
 }

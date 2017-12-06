@@ -37,10 +37,10 @@
 int* pair_pid[2];
 
 
-int Fault_Key=7100, Pair_Key=7200;
+int fault_key=7100, pair_key=7200;
 
 
-int Process_Key;
+int process_key;
 int	process_shm[_n_of_process_] = { 8000 , 10000 , 12000 , 14000 };
 
 //----->> estrutura com informaçoes sobre o page-fault
@@ -111,12 +111,12 @@ int main(void){
 	EH_signal( SIGUSR2, sig_handler );
 	EH_signal( SIGUSR1, sig_handler);
 
-	segment = EH_shmget(Fault_Key, sizeof(Fault_Info), IPC_CREAT | S_IRUSR | S_IWUSR);
+	segment = EH_shmget(fault_key, sizeof(Fault_Info), IPC_CREAT | S_IRUSR | S_IWUSR);
 
 	for( i = 0 ; i < N_PROCESS; i++ ){
 		pid = EH_fork();
 		if( pid == 0 ){
-			process_Key=process_shm[i];
+			process_key=process_shm[i];
 			segment = EH_shmget(process_shm[i], _max_pages_ * sizeof(u_int), IPC_CREAT | S_IRUSR | S_IWUSR);
 			create_process(process_names[i]);
 		}
@@ -161,7 +161,7 @@ void sig_handler(int signal){
 	u_int		*table;
 	Fault_Info information;
 	if(signal == SIGUSR1){
-		seg1		= EH_shmget(Fault_Key, sizeof(Fault_Info),  S_IRUSR | S_IWUSR);
+		seg1		= EH_shmget(fault_key, sizeof(Fault_Info),  S_IRUSR | S_IWUSR);
 		information	= (Fault_Info)EH_shmat(seg1, 0, 0);
 		seg2		= EH_shmget(FP, _max_pages_ * sizeof(u_int),  S_IRUSR | S_IWUSR);
 		table 		= (u_int *)EH_shmat(seg2, 0, 0);

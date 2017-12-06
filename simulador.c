@@ -202,8 +202,9 @@ bool trans(pid_t pid, u_short i, u_short offset, char rw){
 		//se nao, avisa o GM que houve pagefault
 		//salva o numero do processo requerinte e pagina virtual nao mapeada em uma outra memoria compartilhada(precisa ser criada pelo processo pai)
 		if(isLocked_info()){
-
+			sleep_nano(sleeper);
 		}
+		unlock_info(pid, i);
 		kill(ppid(), SIGUSR1);
 		raise(SIGSTOP);
 		return false;

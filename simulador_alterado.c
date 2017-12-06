@@ -144,13 +144,18 @@ void create_process(char* arquivo){
 
 void sig_handler(int signal){
 	int segment;
+	int pid;
+	u_short virtual_page;
+	u_int *Table;
 	Fault_Information information;
 	if(signal == SIGUSR1){
 		segment = EH_shmget(Fault_Key, sizeof(Fault_Information),  S_IRUSR | S_IWUSR);
 		information = (Fault_Information)EH_shmat(segment, 0, 0);
 		segment = EH_shmget(FP, 256 * sizeof(u_int),  S_IRUSR | S_IWUSR);
-		information = (Fault_Information)EH_shmat(segment, 0, 0);
-		information.pid=
+		Table = (u_int *)EH_shmat(segment, 0, 0);
+		pid=information.pid;
+		virtual_page=information.Virtual_Page;
+		//achar um frame livre pra esse par processo-pagina virtual
 	}
 	else{
 		printf ("SIGNAL: %d\n", signal);

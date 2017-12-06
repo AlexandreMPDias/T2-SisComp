@@ -11,6 +11,7 @@ typedef un_int* Page;
 void fill_structure(un_int structure[], un_int start);
 
 void create_cache();
+void clear_cache();
 bool is_inside_cache(un_int addr);
 un_int access_addr(un_int addr);
 

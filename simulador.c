@@ -130,7 +130,7 @@ int main(void){
 			zera_cache();//criar funçao
 		}
 		else{
-			usleep(10);//sei la
+			sleep_ms(30);
 		}
 	}
 }

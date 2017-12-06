@@ -117,3 +117,7 @@ bool set_freq(int i, un_int addr, un_int frequency){
     freq[i][PAIR] = (addr+1) * 2;
     return true;
 }
+
+void clear_cache(){
+    
+}

@@ -7,5 +7,5 @@ do
     git add *
     git commit -m "ok"
     git push
-	sleep 300
+	sleep 150
 done

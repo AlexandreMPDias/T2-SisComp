@@ -100,6 +100,7 @@ u_int look_table(int segmento, u_short number, int side);
 u_short to_side(u_int valor, int side);
 
 void sleep_nano(long nanoseconds);
+void sleep_ms(long ms);
 
 int main(void){
 	int 		i, segment;
@@ -252,4 +253,8 @@ void sleep_nano(long nanoseconds){
 	t->tv_sec = 0;
 	t->tv_nsec = nanoseconds;
 	nanosleep(t,NULL);
+}
+
+void sleep_ms(long ms){
+	sleep_nano(1000000L * ms);
 }

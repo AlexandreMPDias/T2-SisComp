@@ -41,7 +41,7 @@ int Fault_Key=7100, Pair_Key=7200;
 
 
 int Process_Key;
-int	process_shm[N_PROCESS]={ 8000 , 10000 , 12000 , 14000 };
+int	process_shm[_n_of_process_] = { 8000 , 10000 , 12000 , 14000 };
 
 //----->> estrutura com informaçoes sobre o page-fault
 typedef struct Fault_Info__{

@@ -13,6 +13,15 @@ void create_process(char* arquivo,int shm);
 
 #define print debug(PRE, 0,
 
+bool trans(pid_t, u_short, u_short, char); 
+
+u_int m_mmap (void*,size_t,int,int,off_t);
+
+u_int m_mmap (void* addr ,size_t len,int prot,int fd,off_t offset){
+	u_int *end = (u_int*)mmap(addr, len, prot, MAP_SHARED, fd, offset);
+	return end;
+}
+
 int main(void){
 	int i;
 	EH_signal( SIGUSR2, sig_handler );
@@ -67,4 +76,14 @@ void sig_handler(int signal){
         default :
             print "SIGNAL %d\n", signal);
     }
+}
+
+bool trans(pid_t pid, u_short i, u_short offset, char rw){
+	if(true){
+		printf("%d, %04x, %04x, %c\n", pid, i,offset,rw);
+		return true;
+	}
+	else{
+		return false;
+	}
 }

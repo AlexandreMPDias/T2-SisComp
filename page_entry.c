@@ -70,6 +70,6 @@ void virtual_address(v_addr addr, int *page_number, int *offset){
     *offset = 0x111 & addr;
 }
 void physical_address(f_addr addr, int *page_number, int *offset){
-    *page_number = addr & 0x0111 1000;
+    *page_number = addr & 0x01111000;
     *offset = 0x111 & addr;
 }

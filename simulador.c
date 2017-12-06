@@ -48,7 +48,6 @@ int	process_shm[_n_of_process_] = { 8000 , 10000 , 12000 , 14000 };
 typedef struct Fault_Info__{
 	int pid;
 	u_short virtual_page;
-	
 }Fault_Info;
 
 

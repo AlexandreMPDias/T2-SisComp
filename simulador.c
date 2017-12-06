@@ -16,18 +16,18 @@
 #include <stdlib.h>
 #include "error_handler.h"
 #include "auxiliar.h"
-#define N_PROCESS 4
+
 #define print debug(PRE, 0,
 
 #define PID_ 0
 #define SEG_ 1
 
+#define _n_of_process_	0x4	//4
+#define _max_pages_		0x100	//256
 
-#define _left_ 0xffff0000
-#define _right_ 0x0000ffff
-
-#define _max_ 0xffffffff
-
+#define _left_			0xffff0000
+#define _right_			0x0000ffff
+#define _max_			0xffffffff
 
 //---->> Variaveis Globais
 
@@ -35,6 +35,9 @@
  * Vetor alocado na memória compartilhada para realizar o mapeamento entre o process_id e o segmento em que a page_table desse processo está alocada.
  */
 int* pair_pid[2];
+
+
+
 
 //---->> Funções utilizadas
 
@@ -52,74 +55,80 @@ void create_process(char* arquivo,int shm);
  */
 bool trans(pid_t, u_short, u_short, char); 
 
+/**
+ * get_segmento
+ * Percorre a page_table to processo e procu
+ */
 u_int get_segmento(pid_t pid);
 
+/**
+ * look_table
+ * Percorre a page_table to processo e procurando por um determinado valor de 16 bits dentro do endereco na tabela.
+ * @param segmento: segmento para recuperar a tabela.
+ * @param number: numero de 16 bits que espera-se ser encontrado dentro dos valores de 32 bits para cada entrada da page_table.
+ * @param side: se side for _left_ procura o number nos 16 bits da esquerda da entrada, e se side for _right_ procura o number nos 16 bits da direita da entrada.
+ * 
+ * @return: uma vez encontrado o valor na tabela, retorna os 16 bits do outro lado do numero. Retorna _max_ caso o valor não seja encontrado.
+ * Ex: tabela possui >somente< a entrada 87621234
+ * look_table(seg, 8762, _left_) retorna 1234
+ * look_table(seg, 1234, _right_) retorna 8762
+ * look_table(seg, 1234, _left_) retorna _max_
+ * look_table(seg, 8762, _right_) retorna _max_
+ */
+u_int look_table(int segmento, u_short number, int side);
 
-u_int look_table(int segmento, u_short number, int side){
-	int i;
-	u_int entry;
-	u_short ret;
-	u_short s_entry;
-	u_int othe_side;
-	u_int* table = (u_int*)EH_shmat(segmento, 0, 0);
-
-	if(side == _right_){
-		other_side = _left_;
-	}
-	else{
-		other_side = _right_;
-	}
-	for(i = 0; i < 256; i++ ){
-		entry = table[i] & side;
-		if(side == _left_){
-			s_entry = entry >> 16;
-		}
-		else{
-			s_entry = entry;
-		}
-		if(s_entry == number){
-			if(side == _right_){
-				return (table[i] & _left_) >> 16;
-			}
-			else{
-				return table[i] & _right_;
-			} 
-		}
-		
-	}
-	return _max_;		
-}
+/**
+ * to_side
+ * Corta ao meio um vetor de bits de 32 bits, e retorna uma das partes em um vetor de bits de tamanho igual a 16.
+ * @param valor de 32bits que será cortado ao meio
+ * @param lado do corte. Se corte = _right_ , retorna o lado direito do vetor de bits. Se corte = _left_, o mesmo acontecerá par ao lado esquerdo do vetor de bits.
+ * Ex:
+ * to_side(0x12345678, _left_)  -> retornará 0x1234
+ * to_side(0x12345678, _right_) -> retornará 0x5678
+ * 
+ */
+u_short to_side(u_int valor, int side);
 
 int main(void){
 	int 	i, segment;
-	u_int	tables[N_PROCESS];
+	int		process_shm[_n_of_process_] = { 8000 , 10000 , 12000 , 14000 };
+	u_int	tables[_n_of_process_];
 	pid_t	pid;
-	int	process_shm[N_PROCESS]={ 8000 , 10000 , 12000 , 14000 };
-	char	process_names[][N_PROCESS]={ "compilador.log" , "compressor.log" , "matriz.log" , "simulador.log" };
+	char	process_names[][_n_of_process_]={ "compilador.log" , "compressor.log" , "matriz.log" , "simulador.log" };
 
 	EH_signal( SIGUSR2, sig_handler );
 	EH_signal( SIGUSR1, sig_handler);
 
-	segment = EH_shmget(IPC_PRIVATE, sizeof(int) * 2 * N_PROCESS, IPC_CREAT | S_IRUSR | S_IWUSR);
+	segment = EH_shmget(IPC_PRIVATE, sizeof(int) * 2 * _n_of_process_, IPC_CREAT | S_IRUSR | S_IWUSR);
 	pair_pid = (int**)EH_shmat(segment, 0, 0);
 
-	for( i = 0 ; i < N_PROCESS; i++ ){
+	for( i = 0 ; i < _n_of_process_; i++ ){
 		pid = EH_fork();
 		if( pid == 0 ){
 			pair_pid[i][PID_] = getppid();
 			pair_pid[i][SEG_] = process_shm[i];
-			segment = EH_shmget(process_shm[i], 256 * sizeof(u_int), IPC_CREAT | S_IRUSR | S_IWUSR);
+			segment = EH_shmget(process_shm[i], _max_pages_ * sizeof(u_int), IPC_CREAT | S_IRUSR | S_IWUSR);
 			create_process(process_names[i], process_shm[i]);
 		}
 		else{
 
 		}
 	}
+	/**
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 */
 	/*Implementar gerente de memoria*/
 }
 
 void create_process(char* arquivo,int shm_addr){
-	un_int		addr;
+	u_int		addr;
 	u_short		i , o;
 	u_int*		page_table;
 	pid_t		pid;
@@ -127,23 +136,43 @@ void create_process(char* arquivo,int shm_addr){
 	FILE*		file;
 
 	file = EH_fopen(arquivo,"r");
-	table = (u_int*)shmat(shm, 0,0);
+	table = (u_int*) shmat(shm, 0,0);
 	pid = getpid();
 
-	while(fscanf(file,"%x %c ", &addr, &rw)){
-		i = (u_short)((addr & _left_) >> 16);
-		o = (u_short)(addr & _right_);
-		trans(pid,i,o,rw);
+	while(fscanf(file,"%x %c ", &addr, &rw) != 0){
+		i = to_side(addr, _left_);
+		o = to_side(addr, _right_);
+		if(trans(pid,i,o,rw)){
+			/**
+			 * 
+			 * 
+			 * 
+			 * 
+			 * 
+			 */
+		}
 	}
 	fclose(file);
 }
 
 void sig_handler(int signal){
 	if(signal == SIGUSR1){
-		//tratar
+		/**
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 */
 	}
 	else if(signal == SIGUSR2){
-		//tratar
+		/**
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 */
 	}
 	print "SIGNAL: %d\n", signal);
 }
@@ -151,25 +180,68 @@ void sig_handler(int signal){
 bool trans(pid_t pid, u_short i, u_short offset, char rw){
 	//abrir mem. compartilhada do processo
 	//percorrer table de memoria compartilhada checando se possui mapeamento
-	int segmento = get_segmento(pid);
-	if(true) {//se sim, imprime
-		printf("%d, %04x, %04x, %c\n", pid, (u_short)i,offset,rw);
-		return true;
-	}
-	else{ 	//se nao, avisa o GM que houve pagefault
+	int 	segmento = get_segmento(pid);
+	u_int	entry = look_table(segmento, i, _left_);
+
+
+	if(entry == _max_){
+		//se nao, avisa o GM que houve pagefault
 		//salva o numero do processo requerinte e pagina virtual nao mapeada em uma outra memoria compartilhada(precisa ser criada pelo processo pai)
 		kill(ppid(), SIGUSR1);
 		raise(SIGSTOP);		
 		return false;
 	}
+	else {
+		//se sim, imprime:
+		printf("%d, %04x, %04x, %c\n", pid, (u_short)entry, offset, rw);
+		/**
+		 * CHECAR SE OS PARAMETROS DO PRINTF ESTAO CERTOS.
+		 * 
+		 * 
+		 * 
+		 * 
+		 * 
+		 */
+		return true;
+	}
+}
+
+u_int look_table(int segmento, u_short number, int side){
+	int i;
+	u_int 	entry;
+	u_short	ret;
+	u_short	s_entry;
+	u_int*	table = (u_int*)EH_shmat(segmento, 0, 0);
+	int other_side = (side == _left_) ? _right_ : _left_;
+	for(i = 0; i < _max_pages_; i++ ) {
+		entry = table[i] & side; // entry = 16 bits do $side de table[i]
+		s_entry = to_side(entry, side);
+
+		if (s_entry == number){ // se achar o numero, retorna o valor do outro lado do vetor de bits.
+			return to_side(entry, other_side);
+		}
+	}
+	return _max_;		
 }
 
 u_int get_segmento(pid_t pid){
 	int i;
-	for(i=0; i < N_PROCESS; i++){
+	for (i = 0 ; i < _n_of_process_ ; i++){
 		if(pair_pid[i][PID_] = pid){
 			return pair_pid[i][SEG_];
 		}
 	}
-	return -1;
+
+	print "Segmento invalido: [%d]\n", 
+}
+
+u_short to_side(u_int valor, int side){
+	if(side == _left_){
+		return (u_short)( (valor & _left_ ) >> 16);
+	}
+	else if(side == _right_){
+		return (u_short) (valor & _right_ );
+	}
+	print "Valor invalido para o lado.\n");
+	exit(1);
 }

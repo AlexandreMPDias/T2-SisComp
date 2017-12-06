@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include "error_handler.h"
 #include "auxiliar.h"
+#include <time.h>
 
 #define print debug(PRE, 0,
 
@@ -99,19 +100,21 @@ u_int look_table(int segmento, u_short number, int side);
  */
 u_short to_side(u_int valor, int side);
 
+void sleep_nano(long nanoseconds);
+
 int main(void){
 	int 		i, segment;
-	u_int		tables[N_PROCESS];
+	u_int		tables[_n_of_process];
 	pid_t		pid;
 	Fault_Info	information;
-	char		process_names[][N_PROCESS]={ "compilador.log" , "compressor.log" , "matriz.log" , "simulador.log" };
+	char		process_names[][_n_of_process]={ "compilador.log" , "compressor.log" , "matriz.log" , "simulador.log" };
 
 	EH_signal( SIGUSR2, sig_handler );
 	EH_signal( SIGUSR1, sig_handler);
 
 	segment = EH_shmget(fault_key, sizeof(Fault_Info), IPC_CREAT | S_IRUSR | S_IWUSR);
 
-	for( i = 0 ; i < N_PROCESS; i++ ){
+	for( i = 0 ; i < _n_of_process; i++ ){
 		pid = EH_fork();
 		if( pid == 0 ){
 			process_key=process_shm[i];
@@ -235,4 +238,11 @@ u_short to_side(u_int valor, int side){
 	}
 	print "Valor invalido para o lado.\n");
 	exit(1);
+}
+
+void sleep_nano(long nanoseconds){
+	struct timespec t;
+	t->tv_sec = 0;
+	t->tv_nsec = nanoseconds;
+	nanosleep(t,NULL);
 }

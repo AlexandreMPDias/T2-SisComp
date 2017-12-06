@@ -48,7 +48,7 @@ int* pair_pid[2];
 int fault_key=7100, pair_key=7200;
 int process_key;
 int	process_shm[_n_of_process_] = { 8000 , 10000 , 12000 , 14000 };
-
+Fault_Info* shd_info;
 
 //---->> Funções utilizadas
 
@@ -99,6 +99,9 @@ u_int look_table(int segmento, u_short number, int side);
  */
 u_short to_side(u_int valor, int side);
 
+void lock_info(pid_t);
+void unlock_info();
+
 void sleep_nano(long nanoseconds);
 void sleep_ms(long ms);
 
@@ -126,8 +129,8 @@ int main(void){
 	while(true){
 		gettimeofday (&corr_tv, NULL);
 		if(((corr_tv.tv_usec-inicio_tv.tv_usec)>CPU_TIME)){
-			inicio_tv=corr_tv;
-			zera_cache();//criar funçao
+			inicio_tv = corr_tv;
+			clear_cache();
 		}
 		else{
 			sleep_ms(30);

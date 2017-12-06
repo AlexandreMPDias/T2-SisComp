@@ -99,7 +99,7 @@ u_int look_table(int segmento, u_short number, int side);
  */
 u_short to_side(u_int valor, int side);
 
-void lock_info(pid_t);
+void lock_info(pid_t,u_short);
 void unlock_info();
 
 void sleep_nano(long nanoseconds);
@@ -260,4 +260,19 @@ void sleep_nano(long nanoseconds){
 
 void sleep_ms(long ms){
 	sleep_nano(1000000L * ms);
+}
+
+void lock_info(pid_t p, u_short vt_page){
+	shd_info->pid = p;
+	shd_info->virtual_page = vt_page;
+}
+
+void unlock_info(){
+	shd_info->pid = 0;
+}
+
+bool isUnlocked_info(){
+	if(shd_info->pid == 0){
+		return true;
+	}
 }

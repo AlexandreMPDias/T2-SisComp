@@ -56,9 +56,8 @@ typedef struct Fault_Info__{
  * create_process
  * Cria um processo, acessa a tabela desse processo no segmento especificado da memória compartilhada. Em seguida, le as instruções do arquivo recebido.
  * @param arquivo: nome do arquivo que deverá ser lido por esse processo.
- * @param shm: segmento na memória compartilhada usada para alocar a page_table deste processo.
  */
-void create_process(char* arquivo,int shm);
+void create_process(char* arquivo, u_int sleeper);
 
 /*
  * trans
@@ -117,7 +116,7 @@ int main(void){
 		if( pid == 0 ){
 			process_key=process_shm[i];
 			segment = EH_shmget(process_shm[i], _max_pages_ * sizeof(u_int), IPC_CREAT | S_IRUSR | S_IWUSR);
-			create_process(process_names[i]);
+			create_process(process_names[i], i);
 		}
 	}
 	while(true){
@@ -126,7 +125,7 @@ int main(void){
 	}
 }
 
-void create_process(char* arquivo, u_int* page_table){
+void create_process(char* arquivo, u_int sleeper){
 	u_int		addr;
 	u_short		i , o;
 	u_int*		page_table;

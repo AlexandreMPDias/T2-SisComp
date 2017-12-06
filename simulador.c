@@ -106,7 +106,7 @@ void sleep_nano(long nanoseconds);
 void sleep_ms(long ms);
 
 int main(void){
-	int 		i, segment;
+	int 		i, segment, s;
 	u_int		tables[_n_of_process];
 	pid_t		pid;
 	Fault_Info	information;
@@ -115,7 +115,11 @@ int main(void){
 	EH_signal( SIGUSR2, sig_handler );
 	EH_signal( SIGUSR1, sig_handler);
 	struct timeval start_tv,corr_tv;
+
+
 	segment = EH_shmget(fault_key, sizeof(Fault_Info), IPC_CREAT | S_IRUSR | S_IWUSR);
+	
+	shd_info = EH_shmat(segment,NULL,0);
 
 	for( i = 0 ; i < _n_of_process; i++ ){
 		pid = EH_fork();
@@ -275,4 +279,5 @@ bool isUnlocked_info(){
 	if(shd_info->pid == 0){
 		return true;
 	}
+	return false;
 }

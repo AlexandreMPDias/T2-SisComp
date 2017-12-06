@@ -1,3 +1,13 @@
+/*
+ * Sistemas de Computação - INF1019 - 2017.2
+ * Prof Markus Endler
+ * Trabalho 2 - Simulando Memória Virtual e Substituição de Páginas LFU
+ * 
+ * Aluno1: Alexandre de Mello. P Dias - 1413183
+ * Aluno2: Caio Dia de Festa - xxxxxxxx
+ * 
+ */
+
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -6,84 +16,160 @@
 #include <stdlib.h>
 #include "error_handler.h"
 #include "auxiliar.h"
-#define NUMBEROFPROCESS 4
-char **process_names={"compilador.log","compressor.log","matriz.log","simulador.log"};
-int *process_shm={8000,8200,8400,8600};
-void create_process(char* arquivo,int shm);
-
+#define N_PROCESS 4
 #define print debug(PRE, 0,
 
+#define PID_ 0
+#define SEG_ 1
+
+
+#define _left_ 0xffff0000
+#define _right_ 0x0000ffff
+
+#define _max_ 0xffffffff
+
+
+//---->> Variaveis Globais
+
+/*
+ * Vetor alocado na memória compartilhada para realizar o mapeamento entre o process_id e o segmento em que a page_table desse processo está alocada.
+ */
+int* pair_pid[2];
+
+//---->> Funções utilizadas
+
+/*
+ * create_process
+ * Cria um processo, acessa a tabela desse processo no segmento especificado da memória compartilhada. Em seguida, le as instruções do arquivo recebido.
+ * @param arquivo: nome do arquivo que deverá ser lido por esse processo.
+ * @param shm: segmento na memória compartilhada usada para alocar a page_table deste processo.
+ */
+void create_process(char* arquivo,int shm);
+
+/*
+ * trans
+ * --descrição e explicação desse método estão contidos no enunciado do trabalho.
+ */
 bool trans(pid_t, u_short, u_short, char); 
 
-u_int m_mmap (void*,size_t,int,int,off_t);
+u_int get_segmento(pid_t pid);
 
-u_int m_mmap (void* addr ,size_t len,int prot,int fd,off_t offset){
-	u_int *end = (u_int*)mmap(addr, len, prot, MAP_SHARED, fd, offset);
-	return end;
+
+u_int look_table(int segmento, u_short number, int side){
+	int i;
+	u_int entry;
+	u_short ret;
+	u_short s_entry;
+	u_int othe_side;
+	u_int* table = (u_int*)EH_shmat(segmento, 0, 0);
+
+	if(side == _right_){
+		other_side = _left_;
+	}
+	else{
+		other_side = _right_;
+	}
+	for(i = 0; i < 256; i++ ){
+		entry = table[i] & side;
+		if(side == _left_){
+			s_entry = entry >> 16;
+		}
+		else{
+			s_entry = entry;
+		}
+		if(s_entry == number){
+			if(side == _right_){
+				return (table[i] & _left_) >> 16;
+			}
+			else{
+				return table[i] & _right_;
+			} 
+		}
+		
+	}
+	return _max_;		
 }
 
 int main(void){
-	int i;
+	int 	i, segment;
+	u_int	tables[N_PROCESS];
+	pid_t	pid;
+	int	process_shm[N_PROCESS]={ 8000 , 10000 , 12000 , 14000 };
+	char	process_names[][N_PROCESS]={ "compilador.log" , "compressor.log" , "matriz.log" , "simulador.log" };
+
 	EH_signal( SIGUSR2, sig_handler );
 	EH_signal( SIGUSR1, sig_handler);
-	pid_t pid  = EH_fork();
-	for( i = 0 ; i < NUMBEROFPROCESS; i++ ){
+
+	segment = EH_shmget(IPC_PRIVATE, sizeof(int) * 2 * N_PROCESS, IPC_CREAT | S_IRUSR | S_IWUSR);
+	pair_pid = (int**)EH_shmat(segment, 0, 0);
+
+	for( i = 0 ; i < N_PROCESS; i++ ){
+		pid = EH_fork();
 		if( pid == 0 ){
-			create_process(process_names[i]);
+			pair_pid[i][PID_] = getppid();
+			pair_pid[i][SEG_] = process_shm[i];
+			segment = EH_shmget(process_shm[i], 256 * sizeof(u_int), IPC_CREAT | S_IRUSR | S_IWUSR);
+			create_process(process_names[i], process_shm[i]);
+		}
+		else{
+
 		}
 	}
 	/*Implementar gerente de memoria*/
-	//criar mmap
-	//criar swap
 }
 
 void create_process(char* arquivo,int shm_addr){
-	un_int addr;
-	u_short i , o;
-	char rw;
-	FILE *file ;
-	file = EH_fopen(arquivo,"r");
-	//criar memoria compartilhada com a page_table
-	/*
-	shm = shmget( shm_addr, ?????????, IPC_CREAT | S_IRUSR | S_IWUSR);
-	if( shm == -1 )
-	{
-		printf("esc.c Erro: Nao foi possivel alocar memoria compartilhada\n");
-		exit( 1 );
-	}
+	un_int		addr;
+	u_short		i , o;
+	u_int*		page_table;
+	pid_t		pid;
+	char		rw;
+	FILE*		file;
 
-    p  = ( char * ) shmat( shm, 0, 0 );
-	if( p == NULL )
-	{
-		printf("esc.c: Nao foi possivel alocar memoria compartilhada\n");
-		exit( 1 );
-	}*/
+	file = EH_fopen(arquivo,"r");
+	table = (u_int*)shmat(shm, 0,0);
+	pid = getpid();
+
 	while(fscanf(file,"%x %c ", &addr, &rw)){
-		i = addr & 0xffff;
-		o = addr >> 16;
-		trans(getpid(),i,o,rw);
+		i = (u_short)((addr & _left_) >> 16);
+		o = (u_short)(addr & _right_);
+		trans(pid,i,o,rw);
 	}
 	fclose(file);
 }
+
 void sig_handler(int signal){
-	switch(signal) {
-		case SIGUSR1 :
+	if(signal == SIGUSR1){
 		//tratar
-            break;
-        case SIGUSR2 :
-        //tratar
-            break;
-        default :
-            print "SIGNAL %d\n", signal);
-    }
+	}
+	else if(signal == SIGUSR2){
+		//tratar
+	}
+	print "SIGNAL: %d\n", signal);
 }
 
 bool trans(pid_t pid, u_short i, u_short offset, char rw){
-	if(true){
-		printf("%d, %04x, %04x, %c\n", pid, i,offset,rw);
+	//abrir mem. compartilhada do processo
+	//percorrer table de memoria compartilhada checando se possui mapeamento
+	int segmento = get_segmento(pid);
+	if(true) {//se sim, imprime
+		printf("%d, %04x, %04x, %c\n", pid, (u_short)i,offset,rw);
 		return true;
 	}
-	else{
+	else{ 	//se nao, avisa o GM que houve pagefault
+		//salva o numero do processo requerinte e pagina virtual nao mapeada em uma outra memoria compartilhada(precisa ser criada pelo processo pai)
+		kill(ppid(), SIGUSR1);
+		raise(SIGSTOP);		
 		return false;
 	}
+}
+
+u_int get_segmento(pid_t pid){
+	int i;
+	for(i=0; i < N_PROCESS; i++){
+		if(pair_pid[i][PID_] = pid){
+			return pair_pid[i][SEG_];
+		}
+	}
+	return -1;
 }

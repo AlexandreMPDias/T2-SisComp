@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include "error_handler.h"
 #include "auxiliar.h"
+#include <time.h>
 
 #define print debug(PRE, 0,
 
@@ -57,9 +58,8 @@ typedef struct Fault_Info__{
  * create_process
  * Cria um processo, acessa a tabela desse processo no segmento especificado da memória compartilhada. Em seguida, le as instruções do arquivo recebido.
  * @param arquivo: nome do arquivo que deverá ser lido por esse processo.
- * @param shm: segmento na memória compartilhada usada para alocar a page_table deste processo.
  */
-void create_process(char* arquivo,int shm);
+void create_process(char* arquivo, u_int sleeper);
 
 /*
  * trans
@@ -101,24 +101,26 @@ u_int look_table(int segmento, u_short number, int side);
  */
 u_short to_side(u_int valor, int side);
 
+void sleep_nano(long nanoseconds);
+
 int main(void){
 	int 		i, segment;
-	u_int		tables[N_PROCESS];
+	u_int		tables[_n_of_process];
 	pid_t		pid;
 	Fault_Info	information;
-	char		process_names[][N_PROCESS]={ "compilador.log" , "compressor.log" , "matriz.log" , "simulador.log" };
+	char		process_names[][_n_of_process]={ "compilador.log" , "compressor.log" , "matriz.log" , "simulador.log" };
 
 	EH_signal( SIGUSR2, sig_handler );
 	EH_signal( SIGUSR1, sig_handler);
 	struct timeval start_tv,corr_tv;
 	segment = EH_shmget(fault_key, sizeof(Fault_Info), IPC_CREAT | S_IRUSR | S_IWUSR);
 
-	for( i = 0 ; i < N_PROCESS; i++ ){
+	for( i = 0 ; i < _n_of_process; i++ ){
 		pid = EH_fork();
 		if( pid == 0 ){
 			process_key=process_shm[i];
 			segment = EH_shmget(process_shm[i], _max_pages_ * sizeof(u_int), IPC_CREAT | S_IRUSR | S_IWUSR);
-			create_process(process_names[i]);
+			create_process(process_names[i], i);
 		}
 	}
 	gettimeofday (&inicio_tv, NULL);
@@ -134,7 +136,7 @@ int main(void){
 	}
 }
 
-void create_process(char* arquivo, u_int* page_table){
+void create_process(char* arquivo, u_int sleeper){
 	u_int		addr;
 	u_short		i , o;
 	u_int*		page_table;
@@ -244,4 +246,11 @@ u_short to_side(u_int valor, int side){
 	}
 	print "Valor invalido para o lado.\n";
 	exit(1);
+}
+
+void sleep_nano(long nanoseconds){
+	struct timespec t;
+	t->tv_sec = 0;
+	t->tv_nsec = nanoseconds;
+	nanosleep(t,NULL);
 }

@@ -22,6 +22,7 @@
 
 #define PID_ 0
 #define SEG_ 1
+#define CPU_TIME 30
 
 #define _n_of_process_	0x4	//4
 #define _max_pages_		0x100	//256
@@ -109,7 +110,7 @@ int main(void){
 
 	EH_signal( SIGUSR2, sig_handler );
 	EH_signal( SIGUSR1, sig_handler);
-
+	struct timeval start_tv,corr_tv;
 	segment = EH_shmget(fault_key, sizeof(Fault_Info), IPC_CREAT | S_IRUSR | S_IWUSR);
 
 	for( i = 0 ; i < _n_of_process; i++ ){
@@ -120,9 +121,16 @@ int main(void){
 			create_process(process_names[i], i);
 		}
 	}
+	gettimeofday (&inicio_tv, NULL);
 	while(true){
-		//pegar numero o tempo corrente e checar se ja passou 30ms
-		//se passou zerar o cache
+		gettimeofday (&corr_tv, NULL);
+		if(((corr_tv.tv_usec-inicio_tv.tv_usec)>CPU_TIME)){
+			inicio_tv=corr_tv;
+			zera_cache();//criar funçao
+		}
+		else{
+			usleep(10);//sei la
+		}
 	}
 }
 
@@ -171,7 +179,7 @@ void sig_handler(int signal){
 	else{
 		
 	}
-	print "SIGNAL: %d\n", signal);
+	print "SIGNAL: %d\n", signal;
 }
 
 bool trans(pid_t pid, u_short i, u_short offset, char rw){
@@ -235,7 +243,7 @@ u_short to_side(u_int valor, int side){
 	else if(side == _right_){
 		return (u_short) (valor & _right_ );
 	}
-	print "Valor invalido para o lado.\n");
+	print "Valor invalido para o lado.\n";
 	exit(1);
 }
 

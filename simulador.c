@@ -37,6 +37,18 @@
 int* pair_pid[2];
 
 
+int Fault_Key=7100, Pair_Key=7200;
+
+
+int Process_Key;
+int	process_shm[N_PROCESS]={ 8000 , 10000 , 12000 , 14000 };
+
+//----->> estrutura com informaçoes sobre o page-fault
+typedef struct Fault_Info__{
+	int pid;
+	u_short virtual_page;
+	
+}Fault_Info;
 
 
 //---->> Funções utilizadas
@@ -90,44 +102,32 @@ u_int look_table(int segmento, u_short number, int side);
 u_short to_side(u_int valor, int side);
 
 int main(void){
-	int 	i, segment;
-	int		process_shm[_n_of_process_] = { 8000 , 10000 , 12000 , 14000 };
-	u_int	tables[_n_of_process_];
-	pid_t	pid;
-	char	process_names[][_n_of_process_]={ "compilador.log" , "compressor.log" , "matriz.log" , "simulador.log" };
+	int 		i, segment;
+	u_int		tables[N_PROCESS];
+	pid_t		pid;
+	Fault_Info	information;
+	char		process_names[][N_PROCESS]={ "compilador.log" , "compressor.log" , "matriz.log" , "simulador.log" };
 
 	EH_signal( SIGUSR2, sig_handler );
 	EH_signal( SIGUSR1, sig_handler);
 
-	segment = EH_shmget(IPC_PRIVATE, sizeof(int) * 2 * _n_of_process_, IPC_CREAT | S_IRUSR | S_IWUSR);
-	pair_pid = (int**)EH_shmat(segment, 0, 0);
+	segment = EH_shmget(Fault_Key, sizeof(Fault_Info), IPC_CREAT | S_IRUSR | S_IWUSR);
 
-	for( i = 0 ; i < _n_of_process_; i++ ){
+	for( i = 0 ; i < N_PROCESS; i++ ){
 		pid = EH_fork();
 		if( pid == 0 ){
-			pair_pid[i][PID_] = getppid();
-			pair_pid[i][SEG_] = process_shm[i];
+			process_Key=process_shm[i];
 			segment = EH_shmget(process_shm[i], _max_pages_ * sizeof(u_int), IPC_CREAT | S_IRUSR | S_IWUSR);
-			create_process(process_names[i], process_shm[i]);
-		}
-		else{
-
+			create_process(process_names[i]);
 		}
 	}
-	/**
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 * 
-	 */
-	/*Implementar gerente de memoria*/
+	while(true){
+		//pegar numero o tempo corrente e checar se ja passou 30ms
+		//se passou zerar o cache
+	}
 }
 
-void create_process(char* arquivo,int shm_addr){
+void create_process(char* arquivo, u_int* page_table){
 	u_int		addr;
 	u_short		i , o;
 	u_int*		page_table;
@@ -136,7 +136,6 @@ void create_process(char* arquivo,int shm_addr){
 	FILE*		file;
 
 	file = EH_fopen(arquivo,"r");
-	table = (u_int*) shmat(shm, 0,0);
 	pid = getpid();
 
 	while(fscanf(file,"%x %c ", &addr, &rw) != 0){
@@ -156,23 +155,22 @@ void create_process(char* arquivo,int shm_addr){
 }
 
 void sig_handler(int signal){
+	int			seg1, seg2;
+	pid_t		pid;
+	u_short		vt_page;
+	u_int		*table;
+	Fault_Info information;
 	if(signal == SIGUSR1){
-		/**
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 */
+		seg1		= EH_shmget(Fault_Key, sizeof(Fault_Info),  S_IRUSR | S_IWUSR);
+		information	= (Fault_Info)EH_shmat(seg1, 0, 0);
+		seg2		= EH_shmget(FP, _max_pages_ * sizeof(u_int),  S_IRUSR | S_IWUSR);
+		table 		= (u_int *)EH_shmat(seg2, 0, 0);
+		pid			= information.pid;
+		vt_page		= information.virtual_page;
+		//achar um frame livre pra esse par processo-pagina virtual
 	}
-	else if(signal == SIGUSR2){
-		/**
-		 * 
-		 * 
-		 * 
-		 * 
-		 * 
-		 */
+	else{
+		
 	}
 	print "SIGNAL: %d\n", signal);
 }
@@ -188,7 +186,7 @@ bool trans(pid_t pid, u_short i, u_short offset, char rw){
 		//se nao, avisa o GM que houve pagefault
 		//salva o numero do processo requerinte e pagina virtual nao mapeada em uma outra memoria compartilhada(precisa ser criada pelo processo pai)
 		kill(ppid(), SIGUSR1);
-		raise(SIGSTOP);		
+		raise(SIGSTOP);
 		return false;
 	}
 	else {
@@ -209,16 +207,11 @@ bool trans(pid_t pid, u_short i, u_short offset, char rw){
 u_int look_table(int segmento, u_short number, int side){
 	int i;
 	u_int 	entry;
-	u_short	ret;
-	u_short	s_entry;
 	u_int*	table = (u_int*)EH_shmat(segmento, 0, 0);
-	int other_side = (side == _left_) ? _right_ : _left_;
 	for(i = 0; i < _max_pages_; i++ ) {
 		entry = table[i] & side; // entry = 16 bits do $side de table[i]
-		s_entry = to_side(entry, side);
-
-		if (s_entry == number){ // se achar o numero, retorna o valor do outro lado do vetor de bits.
-			return to_side(entry, other_side);
+		if (to_side(entry, side) == number){ // se achar o numero, retorna o valor do outro lado do vetor de bits.
+			return to_side(entry, ~side);
 		}
 	}
 	return _max_;		

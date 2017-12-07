@@ -156,7 +156,22 @@ void create_process(char* arquivo, u_int sleeper){
 	while(fscanf(file,"%x %c ", &addr, &rw) != 0){
 		i = to_side(addr, _left_);
 		o = to_side(addr, _right_);
+<<<<<<< HEAD
+<<<<<<< HEAD
+		if(!trans(pid,i,o,rw)){
+			while(isLocked_info()){
+				sleep_nano(sleeper);
+			}
+			unlock_info(pid, i);
+			kill(ppid(), SIGUSR1);
+			raise(SIGSTOP);
+		}
+=======
 		trans(pid,i,o,rw));
+>>>>>>> 9407471576f2f76430fc4a3d6aa324d71f8de84c
+=======
+		trans(pid,i,o,rw));
+>>>>>>> 9407471576f2f76430fc4a3d6aa324d71f8de84c
 	}
 	fclose(file);
 }
@@ -166,10 +181,10 @@ void sig_handler(int signal){
 	pid_t		pid;
 	u_short		vt_page;
 	u_int		*table;
-	Fault_Info information;
+	Fault_Info information = *shd_info;
 	if(signal == SIGUSR1){
-		seg1		= EH_shmget(fault_key, sizeof(Fault_Info),  S_IRUSR | S_IWUSR);
-		information	= (Fault_Info)EH_shmat(seg1, 0, 0);
+		// seg1		= EH_shmget(fault_key, sizeof(Fault_Info),  S_IRUSR | S_IWUSR);
+		// information	= (Fault_Info)EH_shmat(seg1, 0, 0);
 		seg2		= EH_shmget(FP, _max_pages_ * sizeof(u_int),  S_IRUSR | S_IWUSR);
 		table 		= (u_int *)EH_shmat(seg2, 0, 0);
 		pid			= information.pid;
@@ -201,6 +216,14 @@ bool trans(pid_t pid, u_short i, u_short offset, char rw){
 =======
 		//se nao, avisa o GM que houve pagefault
 		//salva o numero do processo requerinte e pagina virtual nao mapeada em uma outra memoria compartilhada(precisa ser criada pelo processo pai)
+<<<<<<< HEAD
+		// if(isLocked_info()){
+		// 	sleep_nano(sleeper);
+		// }
+		// unlock_info(pid, i);
+		// kill(ppid(), SIGUSR1);
+		// raise(SIGSTOP);
+=======
 		if(isLocked_info()){
 			sleep_nano(sleeper);
 		}
@@ -208,6 +231,7 @@ bool trans(pid_t pid, u_short i, u_short offset, char rw){
 >>>>>>> f1ed1399d3c4bdff3ad6bba2923bb1db84b61322
 		kill(ppid(), SIGUSR1);
 		raise(SIGSTOP);
+>>>>>>> 9407471576f2f76430fc4a3d6aa324d71f8de84c
 		return false;
 	}
 	else {

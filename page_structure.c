@@ -117,3 +117,13 @@ bool set_freq(int i, un_int addr, un_int frequency){
     freq[i][PAIR] = (addr+1) * 2;
     return true;
 }
+
+void clear_cache(){
+    int i;
+    for(i = 0; i < CACHE_SIZE; i++){
+        freq[i][FREQUENCY] = 0;
+        freq[i][ADDR] = 0;
+        freq[i][PAIR] = 0;
+    }
+    logging "Cache resetado.\n");
+}

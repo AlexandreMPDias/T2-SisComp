@@ -31,6 +31,12 @@
 #define _right_			0x0000ffff
 #define _max_			0xffffffff
 
+//----->> estrutura com informaçoes sobre o page-fault
+typedef struct Fault_Info__{
+	int pid;
+	u_short virtual_page;
+}Fault_Info;
+
 //---->> Variaveis Globais
 
 /*
@@ -40,17 +46,9 @@ int* pair_pid[2];
 
 
 int fault_key=7100, pair_key=7200;
-
-
 int process_key;
 int	process_shm[_n_of_process_] = { 8000 , 10000 , 12000 , 14000 };
-
-//----->> estrutura com informaçoes sobre o page-fault
-typedef struct Fault_Info__{
-	int pid;
-	u_short virtual_page;
-}Fault_Info;
-
+Fault_Info* shd_info;
 
 //---->> Funções utilizadas
 
@@ -101,10 +99,14 @@ u_int look_table(int segmento, u_short number, int side);
  */
 u_short to_side(u_int valor, int side);
 
+void lock_info(pid_t,u_short);
+void unlock_info();
+
 void sleep_nano(long nanoseconds);
+void sleep_ms(long ms);
 
 int main(void){
-	int 		i, segment;
+	int 		i, segment, s;
 	u_int		tables[_n_of_process];
 	pid_t		pid;
 	Fault_Info	information;
@@ -113,7 +115,11 @@ int main(void){
 	EH_signal( SIGUSR2, sig_handler );
 	EH_signal( SIGUSR1, sig_handler);
 	struct timeval start_tv,corr_tv;
+
+
 	segment = EH_shmget(fault_key, sizeof(Fault_Info), IPC_CREAT | S_IRUSR | S_IWUSR);
+	
+	shd_info = EH_shmat(segment,NULL,0);
 
 	for( i = 0 ; i < _n_of_process; i++ ){
 		pid = EH_fork();
@@ -127,11 +133,11 @@ int main(void){
 	while(true){
 		gettimeofday (&corr_tv, NULL);
 		if(((corr_tv.tv_usec-inicio_tv.tv_usec)>CPU_TIME)){
-			inicio_tv=corr_tv;
-			zera_cache();//criar funçao
+			inicio_tv = corr_tv;
+			clear_cache();
 		}
 		else{
-			usleep(10);//sei la
+			sleep_ms(30);
 		}
 	}
 }
@@ -182,14 +188,24 @@ bool trans(pid_t pid, u_short i, u_short offset, char rw){
 	Fault_Info information;
 
 	u_int	entry = look_table(segmento, i, _left_);
+	long	sleeper = (long)(pid & 0x00000FFF);
 
 
 	if(entry == _max_){
+<<<<<<< HEAD
 		segment = EH_shmget(fault_key, sizeof(Fault_Info), S_IRUSR | S_IWUSR);
 		information=EH_shmat(segment,0,0);
 		//checa aqui se precisa esperar ou pode salvar
 		information.pid=getpid();
 		information.virtual_page;
+=======
+		//se nao, avisa o GM que houve pagefault
+		//salva o numero do processo requerinte e pagina virtual nao mapeada em uma outra memoria compartilhada(precisa ser criada pelo processo pai)
+		if(isLocked_info()){
+			sleep_nano(sleeper);
+		}
+		unlock_info(pid, i);
+>>>>>>> f1ed1399d3c4bdff3ad6bba2923bb1db84b61322
 		kill(ppid(), SIGUSR1);
 		raise(SIGSTOP);
 		return false;
@@ -234,6 +250,7 @@ u_int get_segmento(pid_t pid){
 }
 
 u_short to_side(u_int valor, int side){
+	u_int a = (valor & side);
 	if(side == _left_){
 		return (u_short)( (valor & _left_ ) >> 16);
 	}
@@ -249,4 +266,24 @@ void sleep_nano(long nanoseconds){
 	t->tv_sec = 0;
 	t->tv_nsec = nanoseconds;
 	nanosleep(t,NULL);
+}
+
+void sleep_ms(long ms){
+	sleep_nano(1000000L * ms);
+}
+
+void lock_info(pid_t p, u_short vt_page){
+	shd_info->pid = p;
+	shd_info->virtual_page = vt_page;
+}
+
+void unlock_info(){
+	shd_info->pid = 0;
+}
+
+bool isLocked_info(){
+	if(shd_info->pid == 0){
+		return false;
+	}
+	return true;
 }

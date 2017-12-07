@@ -96,7 +96,7 @@ u_int* get_table(pid_t pid);
  * look_table(seg, 1234, _left_) retorna _max_
  * look_table(seg, 8762, _right_) retorna _max_
  */
-u_int look_table(u_int* table, u_short number, int side);
+u_int look_table(u_int* table, u_short number, int side,bool wr);
 
 /**
  * to_side
@@ -201,11 +201,10 @@ void create_process(char* arquivo, u_int sleeper){
 	pid_t		pid;
 	char		rw;
 	FILE*		file;
-
 	file = EH_fopen(arquivo,"r");
 	pid = getpid();
-
 	while(fscanf(file,"%x %c ", &addr, &rw) != 0){
+		//sleep_nano(sleeper); acho bom colocar para garntir que haja a alternancia entre os processos
 		i = to_side(addr, _left_);
 		o = to_side(addr, _right_);
 
@@ -235,10 +234,6 @@ void sig_handler(int signal){
 	
 	print "Sinal recebido.");
 	if(signal == SIGUSR1){
-		// seg1		= EH_shmget(fault_key, sizeof(Fault_Info),  S_IRUSR | S_IWUSR);
-		// information	= (Fault_Info)EH_shmat(seg1, 0, 0);
-		//seg2		= EH_shmget(FP, _max_pages_ * sizeof(u_int),  S_IRUSR | S_IWUSR);
-		//table 		= (u_int *)EH_shmat(seg2, 0, 0);
 		pid		= shd_info->pid;
 		vt_page		= shd_info->virtual_page;
 		print "[ SIGUSR1 ] pelo processo [ %d ]\n", pid);
@@ -312,8 +307,9 @@ bool trans(pid_t pid, u_short i, u_short offset, char rw){
 	else {
 		//se sim, imprime:
 		printf("%d, %04x, %04x, %c\n", pid, (u_short)entry, offset, rw);
-		return true;
+		add_freq(int i, un_int addr);
 	}
+    return true;
 }
 
 u_int look_table(u_int* table, u_short number, int side){
@@ -385,9 +381,10 @@ void sleep_ms(long ms){
 	sleep_nano(1000000L * ms);
 }
 
-void lock_info(pid_t p, u_short vt_page){
+void lock_info(pid_t p, u_short vt_page,bool wr){
 	shd_info->pid = p;
 	shd_info->virtual_page = vt_page;
+	shd->info->wr=wr
 }
 
 void unlock_info(){

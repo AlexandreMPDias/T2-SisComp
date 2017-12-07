@@ -117,6 +117,12 @@ bool set_freq(int i, un_int addr, un_int frequency){
     freq[i][PAIR] = (addr+1) * 2;
     return true;
 }
+bool add_freq(int i, un_int addr){
+    freq[i][ADDR] = addr;
+    freq[i][FREQUENCY]+ = 1;
+    freq[i][PAIR] = (addr+1) * 2;
+    return true;
+}
 
 void clear_cache(){
     int i;

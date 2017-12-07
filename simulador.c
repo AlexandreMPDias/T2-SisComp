@@ -4,7 +4,7 @@
  * Trabalho 2 - Simulando Memória Virtual e Substituição de Páginas LFU
  * 
  * Aluno1: Alexandre de Mello. P Dias - 1413183
- * Aluno2: Caio Dia de Festa - xxxxxxxx
+ * Aluno2: Caio Freiertag - xxxxxxxxxxx
  * 
  */
 

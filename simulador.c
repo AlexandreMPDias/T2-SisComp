@@ -109,14 +109,33 @@ u_int look_table(u_int* table, u_short number, int side);
  */
 u_short to_side(u_int valor, int side);
 
+/**
+ * create_shared_matrix
+ * Cria uma matrix de ( nTables linhas e tableSize colunas ) na memória compartilhada.
+ * Inicializa todos os valores com 0.
+ * 
+ */
 u_int** create_shared_matrix(u_int nTables, u_int tableSize);
 
+/**
+ * find_empty_spot
+ * Percorre uma tabela, e retorna o primeiro endereço vazio.
+ * @param table que deverá ser percorrida.
+ * 
+ * @return em caso da tabela não ter nenhum endereço vazio, a função retornará [ -1 ]
+ */
 int find_empty_spot(u_int* table);
 
+/**
+ * Funções criadas para simular um semaforo.
+ */
 void lock_info(pid_t,u_short);
 void unlock_info();
 bool isLocked_info();
 
+/**
+ * Funções para fazer o programa dormir nanosegundos ou milisegundos.
+ */
 void sleep_nano(long nanoseconds);
 void sleep_ms(long ms);
 

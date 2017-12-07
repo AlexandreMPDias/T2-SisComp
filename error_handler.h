@@ -4,8 +4,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <stdio.h>
 
-void EH_signal(int signum, sighandler_t handler);
+typedef void (*sighandler__t)(int);
+
+void EH_signal(int signum, sighandler__t handler);
 pid_t EH_fork();
 FILE* EH_fopen(const char* path, const char *desc);
 int EH_shmget(key_t,size_t size, int flags);

@@ -173,10 +173,10 @@ void sig_handler(int signal){
 	pid_t		pid;
 	u_short		vt_page;
 	u_int		*table;
-	Fault_Info information;
+	Fault_Info information = *shd_info;
 	if(signal == SIGUSR1){
-		seg1		= EH_shmget(fault_key, sizeof(Fault_Info),  S_IRUSR | S_IWUSR);
-		information	= (Fault_Info)EH_shmat(seg1, 0, 0);
+		// seg1		= EH_shmget(fault_key, sizeof(Fault_Info),  S_IRUSR | S_IWUSR);
+		// information	= (Fault_Info)EH_shmat(seg1, 0, 0);
 		seg2		= EH_shmget(FP, _max_pages_ * sizeof(u_int),  S_IRUSR | S_IWUSR);
 		table 		= (u_int *)EH_shmat(seg2, 0, 0);
 		pid			= information.pid;

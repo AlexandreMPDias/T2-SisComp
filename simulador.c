@@ -44,6 +44,7 @@
 typedef struct Fault_Info__{
 	int pid;
 	u_short virtual_page;
+	bool wr;
 }Fault_Info;
 
 //---->> Variaveis Globais
@@ -59,7 +60,7 @@ int 		process_key;
 int		process_shm[_n_of_process_] = { 8000 , 10000 , 12000 , 14000 };
 Fault_Info*	shd_info;
 u_int*		*tables__;
-
+Fault_Info * vPhysicalMemory;
 //---->> Funções utilizadas
 
 /*
@@ -125,7 +126,15 @@ u_int** create_shared_matrix(u_int nTables, u_int tableSize);
  * @return em caso da tabela não ter nenhum endereço vazio, a função retornará [ -1 ]
  */
 int find_empty_spot(u_int* table);
-
+/**
+ * find_empty_spot
+ * Percorre o vetor de frames da memoria fisica, e retorna o primeiro frame nao alocado.
+ * @param table que deverá ser percorrida.
+ * 
+ * @return em caso da tabela não ter nenhum endereço vazio, a função retornará [ -1 ]
+ */
+int find_empty_spot(u_int* table);
+int find_empty_spot_physical();
 /**
  * Funções criadas para simular um semaforo.
  */
@@ -170,6 +179,7 @@ int main(void){
 			create_process(process_names[i], i+1);
 		}
 	}
+	vPhysicalMemory=(Fault_Info *)malloc(256*sizeof(Fault_Info));
 	gettimeofday (&start_tv, NULL);
 	while(true){
 		gettimeofday (&corr_tv, NULL);
@@ -216,10 +226,11 @@ void sig_handler(int signal){
 	int		seg1, seg2;
 	pid_t		pid;
 	u_short		vt_page;
-	int		frame;
+	int		pos,frame;
 
-	u_int*		table;
-
+	u_int*		table,swap2_table;
+	u_int aux;
+	u_char wr;
 	Fault_Info information = *shd_info;
 	
 	print "Sinal recebido.");
@@ -233,33 +244,39 @@ void sig_handler(int signal){
 		print "[ SIGUSR1 ] pelo processo [ %d ]\n", pid);
 
 		table = get_table(pid);
-		frame = get_table_spot(table);
-
+		frame = find_empty_spot_physical();
+		pos= find_empty_spot(table);
 		if(frame < 0){
+			frame=find_least_freq();
+			swap2_table=get_table(vPhysicalMemory[frame]);
+			for(i=0;i<256;i++){
+				if((u_char)swap2_table[i]==frame){/*possivel erro*/
+					break;
+				}
+			}
+			wr=(swap2_table[i]&0x0000ff00)>>2;//testar
+			if(wr==0x01){
+				kill(vPhysicalMemory[frame].pid,SIGUSR2);
+				swap2_table[i]=0xffffffff;
+			}
 			print "Iniciando processo de Swap.\n");
-		}
-		
-		//achar um frame livre pra esse par processo-pagina virtual
-		/**
-		 * 
-		 * 
-		 * NAO ESTA FAZENDO NADA
-		 * 
-		 * 
-		 */
 
+		}
+		vPhysicalMemory[frame].pid=pid;
+		vPhysicalMemory[frame].vt_page=vt_page;
+		vPhysicalMemory[frame].wr=shd_info->wr;
+		//checar essa doideira
+		table[pos]=((u_int)vt_page<<16)&0xffff0000;
+		aux=(u_int)frame;
+		if(shd_info->wr==true){
+			aux=aux|0x00000100;
+		}
+		table[pos]=table[pos]&aux;
 		print "Desprendendo Page_Fault Handler.\n");
 		unlock_info();
 	}
-	else{
-		print "[ SIGUSR1 ] pelo processo [ %d ]\n", pid);
-		/**
-		 * 
-		 * 
-		 * FALTA A IMPLEMENTACAO DO SIGUSR2
-		 * 
-		 * 
-		 */
+	else if(signal==SIGUSR2){
+		sleep(2);
 		
 	}
 	print "SIGNAL: %d\n", signal);
@@ -335,7 +352,6 @@ u_short to_side(u_int valor, int side){
 	print "Valor invalido para: [ lado ].\n");
 	exit(1);
 }
-
 int find_empty_spot(u_int* table){
 	int i;
 	for(i = 0; i < _max_pages_ ; i++ ){
@@ -344,6 +360,17 @@ int find_empty_spot(u_int* table){
 		}
 	}
 	print "Nenhum valor vazio na tabela foi encontrado.\n");
+	return -1;
+}
+
+int find_empty_spot_physical(){
+	int i;
+	for(i = 0; i < _max_pages_ ; i++ ){
+		if(vPhysicalMemory[i].pid == 0){
+			return i;
+		}
+	}
+	print "Nenhum valor vazio na memoria fisica foi encontrado.\n");
 	return -1;
 }
 

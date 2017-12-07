@@ -150,15 +150,7 @@ void create_process(char* arquivo, u_int sleeper){
 	while(fscanf(file,"%x %c ", &addr, &rw) != 0){
 		i = to_side(addr, _left_);
 		o = to_side(addr, _right_);
-		if(trans(pid,i,o,rw)){
-			/**
-			 * 
-			 * 
-			 * 
-			 * 
-			 * 
-			 */
-		}
+		trans(pid,i,o,rw));
 	}
 	fclose(file);
 }
@@ -185,15 +177,19 @@ void sig_handler(int signal){
 }
 
 bool trans(pid_t pid, u_short i, u_short offset, char rw){
-	//abrir mem. compartilhada do processo
-	//percorrer table de memoria compartilhada checando se possui mapeamento
 	int 	segmento = get_segmento(pid);
+	int segment;
+	Fault_Info information;
+
 	u_int	entry = look_table(segmento, i, _left_);
 
 
 	if(entry == _max_){
-		//se nao, avisa o GM que houve pagefault
-		//salva o numero do processo requerinte e pagina virtual nao mapeada em uma outra memoria compartilhada(precisa ser criada pelo processo pai)
+		segment = EH_shmget(fault_key, sizeof(Fault_Info), S_IRUSR | S_IWUSR);
+		information=EH_shmat(segment,0,0);
+		//checa aqui se precisa esperar ou pode salvar
+		information.pid=getpid();
+		information.virtual_page;
 		kill(ppid(), SIGUSR1);
 		raise(SIGSTOP);
 		return false;

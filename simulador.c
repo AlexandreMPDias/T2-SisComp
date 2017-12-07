@@ -156,14 +156,13 @@ void create_process(char* arquivo, u_int sleeper){
 	while(fscanf(file,"%x %c ", &addr, &rw) != 0){
 		i = to_side(addr, _left_);
 		o = to_side(addr, _right_);
-		if(trans(pid,i,o,rw)){
-			/**
-			 * 
-			 * 
-			 * 
-			 * 
-			 * 
-			 */
+		if(!trans(pid,i,o,rw)){
+			while(isLocked_info()){
+				sleep_nano(sleeper);
+			}
+			unlock_info(pid, i);
+			kill(ppid(), SIGUSR1);
+			raise(SIGSTOP);
 		}
 	}
 	fclose(file);
@@ -201,12 +200,12 @@ bool trans(pid_t pid, u_short i, u_short offset, char rw){
 	if(entry == _max_){
 		//se nao, avisa o GM que houve pagefault
 		//salva o numero do processo requerinte e pagina virtual nao mapeada em uma outra memoria compartilhada(precisa ser criada pelo processo pai)
-		if(isLocked_info()){
-			sleep_nano(sleeper);
-		}
-		unlock_info(pid, i);
-		kill(ppid(), SIGUSR1);
-		raise(SIGSTOP);
+		// if(isLocked_info()){
+		// 	sleep_nano(sleeper);
+		// }
+		// unlock_info(pid, i);
+		// kill(ppid(), SIGUSR1);
+		// raise(SIGSTOP);
 		return false;
 	}
 	else {

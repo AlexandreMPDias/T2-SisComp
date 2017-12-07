@@ -157,6 +157,7 @@ void create_process(char* arquivo, u_int sleeper){
 		i = to_side(addr, _left_);
 		o = to_side(addr, _right_);
 <<<<<<< HEAD
+<<<<<<< HEAD
 		if(!trans(pid,i,o,rw)){
 			while(isLocked_info()){
 				sleep_nano(sleeper);
@@ -165,6 +166,9 @@ void create_process(char* arquivo, u_int sleeper){
 			kill(ppid(), SIGUSR1);
 			raise(SIGSTOP);
 		}
+=======
+		trans(pid,i,o,rw));
+>>>>>>> 9407471576f2f76430fc4a3d6aa324d71f8de84c
 =======
 		trans(pid,i,o,rw));
 >>>>>>> 9407471576f2f76430fc4a3d6aa324d71f8de84c

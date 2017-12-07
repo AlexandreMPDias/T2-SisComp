@@ -268,6 +268,7 @@ void sig_handler(int signal){
 		}
 		table[pos]=table[pos]&aux;
 		print "Desprendendo Page_Fault Handler.\n");
+//------set_freq((u_char)table[pos],1);  soma 1 no frame IMPORTANTE!
 		unlock_info();
 	}
 	else if(signal==SIGUSR2){
@@ -306,8 +307,10 @@ bool trans(pid_t pid, u_short i, u_short offset, char rw){
 	}
 	else {
 		//se sim, imprime:
-		printf("%d, %04x, %04x, %c\n", pid, (u_short)entry, offset, rw);
-		add_freq(int i, un_int addr);
+		printf("%d, %04x, %04x, %c\n", pid, (u_char)entry, offset, rw);
+		//tenho q colocar pra se o acesso for de escrita mudar os bytes marcados com A 0x0000AA00 A para 01 escrita 
+		//inicialmente se for aberto somente pra leitura ele vai estar 00 entao precisa mudar por causa do swap2
+//------add_freq((u_char)entry);  soma 1 no frame IMPORTANTE!
 	}
     return true;
 }
@@ -384,7 +387,7 @@ void sleep_ms(long ms){
 void lock_info(pid_t p, u_short vt_page,bool wr){
 	shd_info->pid = p;
 	shd_info->virtual_page = vt_page;
-	shd->info->wr=wr
+	shd->info->wr=wr;
 }
 
 void unlock_info(){

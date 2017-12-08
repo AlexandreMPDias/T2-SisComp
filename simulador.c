@@ -151,9 +151,8 @@ void sleep_ms(long ms);
 void sig_handler(int signal);
 
 int main(void){
-	int 		i, segment, s;
+	int 		i, segment;
 	pid_t		pid;
-	Fault_Info	information;
 	char 		*process_names[100] = { "compilador.log" , "compressor.log" , "matriz.log" , "simulador.log" };
 	struct timeval	start_tv,corr_tv;
 	
@@ -195,7 +194,6 @@ int main(void){
 void create_process(char* arquivo, u_int sleeper){
 	u_int		addr;
 	u_short		i , o;
-	u_int*		page_table;
 	pid_t		pid;
 	char		rw;
 	FILE*		file;
@@ -224,7 +222,7 @@ void sig_handler(int signal){
 	int			seg1, seg2;
 	pid_t		pid;
 	u_short		vt_page;
-	int			pos,frame;
+	int			pos,frame,i;
 
 	u_int*		table,swap2_table;
 	u_int aux;
@@ -242,7 +240,7 @@ void sig_handler(int signal){
 		pos= find_empty_spot(table);
 		if(frame < 0){
 			frame=find_least_freq();
-			swap2_table=get_table(vPhysicalMemory[frame]);
+			swap2_table=get_table(vPhysicalMemory[frame].pid);
 			for(i = 0; i < 256 ; i++){
 				if( (u_char) swap2_table[i] == frame){/*possivel erro*/
 					break;
@@ -251,23 +249,23 @@ void sig_handler(int signal){
 			wr = ( swap2_table[i] & 0x0000ff00 ) >> 2; //testar
 			if(wr == 0x01){
 				kill(vPhysicalMemory[frame].pid,SIGUSR2);
-				swap2_table[i] = 0xffff ffff;
+				swap2_table[i] = 0xffffffff;
 			}
 			print "Iniciando processo de Swap.\n");
 
 		}
 		vPhysicalMemory[frame].pid = pid;
-		vPhysicalMemory[frame].vt_page = vt_page;
+		vPhysicalMemory[frame].virtual_page = vt_page;
 		vPhysicalMemory[frame].wr = shd_info->wr;
 		//checar essa doideira
-		table[pos]=( (u_int)vt_page << 16 ) & 0xffff 0000;
+		table[pos]=( (u_int)vt_page << 16 ) & 0xffff0000;
 		aux= (u_int)frame;
 		if(shd_info->wr==true){
-			aux |= 0x000 00100;
+			aux |= 0x00000100;
 		}
 		table[pos] = table[pos]&aux;
 		print "Desprendendo Page_Fault Handler.\n");
-		access_addr( /* nao sei o que que voce qr adicionar no cache. */);
+		access_addr( table[pos]&0x000000ff);
 		unlock_info();
 	}
 	else if(signal==SIGUSR2){

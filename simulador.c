@@ -154,7 +154,7 @@ int main(void){
 	int 		i, segment, s;
 	pid_t		pid;
 	Fault_Info	information;
-	char 		*process_names[100]={ "compilador.log" , "compressor.log" , "matriz.log" , "simulador.log" };
+	char 		*process_names[100] = { "compilador.log" , "compressor.log" , "matriz.log" , "simulador.log" };
 	struct timeval	start_tv,corr_tv;
 	
 	tables__ = create_shared_matrix( _n_of_process_ , _max_pages_ );
@@ -171,15 +171,13 @@ int main(void){
 	for( i = 0 ; i < _n_of_process_; i++ ){
 		print "Criando process [ %d / %d ]\n", i+1, _n_of_process_);
 		pid = EH_fork();
-		if( pid == 0 ){
-			//process_key = process_shm[i];
-			//segment = EH_shmget(process_shm[i], _max_pages_ * sizeof(u_int), IPC_CREAT | S_IRUSR | S_IWUSR);
+		if( pid == 0 ) {
 			pair_pid[i][PID_] = getpid();
 			pair_pid[i][TABLE_] = i;
 			create_process(process_names[i], i+1);
 		}
 	}
-	vPhysicalMemory=(Fault_Info *)malloc(256*sizeof(Fault_Info));
+	vPhysicalMemory=(Fault_Info *)malloc(_max_pages_*sizeof(Fault_Info));
 	gettimeofday (&start_tv, NULL);
 	while(true){
 		gettimeofday (&corr_tv, NULL);
@@ -217,15 +215,16 @@ void create_process(char* arquivo, u_int sleeper){
 			kill(getppid(), SIGUSR1);
 			raise(SIGSTOP);
 		}
+		sleep_nano(sleeper);
 	}
 	fclose(file);
 }
 
 void sig_handler(int signal){
-	int		seg1, seg2;
+	int			seg1, seg2;
 	pid_t		pid;
 	u_short		vt_page;
-	int		pos,frame;
+	int			pos,frame;
 
 	u_int*		table,swap2_table;
 	u_int aux;
@@ -244,31 +243,31 @@ void sig_handler(int signal){
 		if(frame < 0){
 			frame=find_least_freq();
 			swap2_table=get_table(vPhysicalMemory[frame]);
-			for(i=0;i<256;i++){
-				if((u_char)swap2_table[i]==frame){/*possivel erro*/
+			for(i = 0; i < 256 ; i++){
+				if( (u_char) swap2_table[i] == frame){/*possivel erro*/
 					break;
 				}
 			}
-			wr=(swap2_table[i]&0x0000ff00)>>2;//testar
-			if(wr==0x01){
+			wr = ( swap2_table[i] & 0x0000ff00 ) >> 2; //testar
+			if(wr == 0x01){
 				kill(vPhysicalMemory[frame].pid,SIGUSR2);
-				swap2_table[i]=0xffffffff;
+				swap2_table[i] = 0xffff ffff;
 			}
 			print "Iniciando processo de Swap.\n");
 
 		}
-		vPhysicalMemory[frame].pid=pid;
-		vPhysicalMemory[frame].vt_page=vt_page;
-		vPhysicalMemory[frame].wr=shd_info->wr;
+		vPhysicalMemory[frame].pid = pid;
+		vPhysicalMemory[frame].vt_page = vt_page;
+		vPhysicalMemory[frame].wr = shd_info->wr;
 		//checar essa doideira
-		table[pos]=((u_int)vt_page<<16)&0xffff0000;
-		aux=(u_int)frame;
+		table[pos]=( (u_int)vt_page << 16 ) & 0xffff 0000;
+		aux= (u_int)frame;
 		if(shd_info->wr==true){
-			aux=aux|0x00000100;
+			aux |= 0x000 00100;
 		}
-		table[pos]=table[pos]&aux;
+		table[pos] = table[pos]&aux;
 		print "Desprendendo Page_Fault Handler.\n");
-//------set_freq((u_char)table[pos],1);  soma 1 no frame IMPORTANTE!
+		access_addr( /* nao sei o que que voce qr adicionar no cache. */);
 		unlock_info();
 	}
 	else if(signal==SIGUSR2){
@@ -310,7 +309,8 @@ bool trans(pid_t pid, u_short i, u_short offset, char rw){
 		printf("%d, %04x, %04x, %c\n", pid, (u_char)entry, offset, rw);
 		//tenho q colocar pra se o acesso for de escrita mudar os bytes marcados com A 0x0000AA00 A para 01 escrita 
 		//inicialmente se for aberto somente pra leitura ele vai estar 00 entao precisa mudar por causa do swap2
-//------add_freq((u_char)entry);  soma 1 no frame IMPORTANTE!
+		//------add_freq((u_char)entry);  soma 1 no frame IMPORTANTE!
+		access_addr(entry);
 	}
     return true;
 }

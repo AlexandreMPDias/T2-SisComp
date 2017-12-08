@@ -12,6 +12,8 @@ void fill_structure(un_int structure[], un_int start);
 
 void create_cache();
 void clear_cache();
+
+bool reset_frequency(un_int addr);
 bool is_inside_cache(un_int addr);
 un_int access_addr(un_int addr);
 bool add_freq(int i, un_int addr);

@@ -54,13 +54,13 @@ bool is_inside_cache(un_int addr){
 un_int access_addr(un_int addr){
     int i, index_desejado, cache_size = 0;
     for( i = 0, index_desejado = -1; i < CACHE_SIZE; i++){
-        if(freq[i][ADDR] == addr){
+        if ( freq[i][ADDR] == addr ) {
             index_desejado = i;
             break;
         }
     }
     for(i = 0; i < CACHE_SIZE; i++){
-        if(freq[i][ADDR] != 0){
+        if ( freq[i][ADDR] != 0 ) {
             cache_size++;
         }
     }
@@ -114,13 +114,13 @@ int find_least_freq(){
 bool set_freq(int i, un_int addr, un_int frequency){
     freq[i][ADDR] = addr;
     freq[i][FREQUENCY] = frequency;
-    freq[i][PAIR] = (addr+1) * 2;
+    freq[i][PAIR] = addr;
     return true;
 }
 bool add_freq(int i, un_int addr){
     freq[i][ADDR] = addr;
-    freq[i][FREQUENCY]+ = 1;
-    freq[i][PAIR] = (addr+1) * 2;
+    freq[i][FREQUENCY] += 1;
+    freq[i][PAIR] = addr;
     return true;
 }
 
@@ -132,4 +132,14 @@ void clear_cache(){
         freq[i][PAIR] = 0;
     }
     logging "Cache resetado.\n");
+}
+
+bool reset_frequency(un_int addr){
+    int i;
+    for(i = 0; i < CACHE_SIZE; i++){
+        if ( freq[i][ADDR] == addr) {
+            freq[i][FREQUENCY] = 1;
+            logging "Frequencia resetada.\n");
+        }
+    }
 }

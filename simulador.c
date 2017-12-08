@@ -96,7 +96,7 @@ u_int* get_table(pid_t pid);
  * look_table(seg, 1234, _left_) retorna _max_
  * look_table(seg, 8762, _right_) retorna _max_
  */
-u_int look_table(u_int* table, u_short number, int side,bool wr);
+u_int look_table(u_int* table, u_short number, int side);
 
 /**
  * to_side
@@ -138,7 +138,7 @@ int find_empty_spot_physical();
 /**
  * Funções criadas para simular um semaforo.
  */
-void lock_info(pid_t,u_short);
+void lock_info(pid_t,u_short,bool wr);
 void unlock_info();
 bool isLocked_info();
 
@@ -209,7 +209,7 @@ void create_process(char* arquivo, u_int sleeper){
 				sleep_nano(sleeper);
 			}
 			print "Desprendendo Page_Fault Handler.\n");
-			lock_info(pid, i);
+			lock_info(pid, i,rw);
 			kill(getppid(), SIGUSR1);
 			raise(SIGSTOP);
 		}
@@ -224,7 +224,8 @@ void sig_handler(int signal){
 	u_short		vt_page;
 	int			pos,frame,i;
 
-	u_int*		table,swap2_table;
+	u_int*		table;
+	u_int *swap2_table;
 	u_int aux;
 	u_char wr;
 	Fault_Info information = *shd_info;
@@ -284,7 +285,7 @@ u_int** create_shared_matrix(u_int nTables, u_int tableSize){
 		seg = EH_shmget(IPC_PRIVATE, (1 + tableSize) * sizeof(u_int), O_CREAT | S_IRUSR | S_IWUSR);
 		table__[i] = EH_shmat( seg , 0 , 0 );
 		for(j=0; j < tableSize + 1; j++){
-			table_[i][j] = 0;
+			table__[i][j] = 0;
 		}
 	}
 	return table__;	
@@ -385,7 +386,7 @@ void sleep_ms(long ms){
 void lock_info(pid_t p, u_short vt_page,bool wr){
 	shd_info->pid = p;
 	shd_info->virtual_page = vt_page;
-	shd->info->wr=wr;
+	shd_info->wr=wr;
 }
 
 void unlock_info(){

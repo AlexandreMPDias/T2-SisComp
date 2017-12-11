@@ -3,13 +3,24 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <unistd.h>
+
 #define _CRT_SECURE_NO_WARNINGS
+
+#ifdef __PRINT__
+static unsigned int __debugLevel__ = 0; 
+#else
+static unsigned int __debugLevel__ = 10000; 
+#endif
+
+int i = 0;
 
 void tabs(int length);
 void print_by_letter(const char *s);
 
 void format(const char *s, int debugLevel) {
     tabs(debugLevel);
+    printf("(%d)", getpid());
     printf("[ ");
     print_by_letter(s);
     printf(" ]: ");
@@ -17,6 +28,7 @@ void format(const char *s, int debugLevel) {
 
 void format2(const char *s, const char *v, int debugLevel) {
     tabs(debugLevel);
+    printf("(%d)", getpid());
     printf("[ ");
     print_by_letter(s);
     printf(" > ");

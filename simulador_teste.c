@@ -14,8 +14,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <signal.h>
-#include <sys/sem.h>
- #include <sys/wait.h>
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -42,23 +41,11 @@
 #define _left_		0xffff0000
 #define _right_		0x0000ffff
 #define _max_		0xffffffff
-#define SEM 7300
+
 #define _flags_ O_CREAT | S_IRUSR | S_IWUSR //O_CREAT | S_IRUSR | S_IWUSR
 
 #define SLEEP_TIMER	(double)CPU_TIME
- union semun
-{
-	int              val;
-	unsigned short  *array;
-	struct semid_ds *buf;
-};
-int setSemValue( int semId );
 
-void delSemValue( int semId );
-
-int semaforoP( int semId );
-
-int semaforoV( int semId );
 //----->> estrutura com informaçoes sobre o page-fault
 typedef struct Fault_Info__{
 	pid_t pid;
@@ -76,7 +63,7 @@ typedef struct Access_Info__{
  * Vetor alocado na memória compartilhada para realizar o mapeamento entre o process_id e o segmento em que a page_table desse processo está alocada.
  */
 u_int** pair_pid;
-int semId;
+
 
 int			fault_key = 7100, pair_key = 7200;
 int 		process_key;
@@ -85,9 +72,6 @@ Fault_Info*	shd_info;
 u_int*		*tables__;
 Access_Info*	accessed_info;
 Fault_Info** vPhysicalMemory;
-int 		my_table;
-int numero_do_processo;
-int pid_processos[4];
 //---->> Funções utilizadas
 
 /*
@@ -190,10 +174,10 @@ int main(void){
 	long		start, elapsed;
 	
 	tables__ = create_shared_matrix( _n_of_process_ , _max_pages_ );
-
+	pair_pid = create_shared_matrix( _n_of_process_ , 2 );
 	vPhysicalMemory = (Fault_Info**)malloc(_max_pages_ * sizeof(Fault_Info*));
 
-	EH_signal(SIGUSR1, sig_handler);
+	EH_signal( SIGUSR1, sig_handler);
 
 
 	segment  = 	EH_shmget(IPC_PRIVATE, sizeof(Fault_Info), _flags_);
@@ -204,31 +188,14 @@ int main(void){
 	accessed_info->pid = 0;
 	shd_info->pid = 0;
 
-	semId = semget( SEM, 1, 0666 | IPC_CREAT );
-	if( semId == -1 )
-	{
-		printf("interpretador.c: Nao foi possivel criar o semaforo.\n");
-		exit( 1 );
-	}
-
-	if( setSemValue( semId ) == -1 )
-	{
-		printf("interpretador.c: Nao foi possivel operar o semaforo.\n");
-		exit( 1 );
-	}
 	print "Iniciando\n");
 	for( i = 0 ; i < _n_of_process_; i++ ){
-
-		numero_do_processo=i;
+		//print "Criando process [ %d / %d ]\n", i+1, _n_of_process_);
 		pid = EH_fork();
 		if( pid == 0 ) {
-
-			my_table = i;
+			pair_pid[i][PID_] = getpid();
+			pair_pid[i][TABLE_] = i;
 			create_process(process_names[i], i+1);
-			print "Encerrando leitura");
-		}
-		else{
-			pid_processos[i]=pid;
 		}
 	}
 
@@ -239,8 +206,9 @@ int main(void){
 		while(true){
 			print "Dormindo por [ %3.2lf ]ms\n", SLEEP_TIMER);
 			sleep_ms(SLEEP_TIMER * 10);
+			sleep(1);
 			print "Liberando Cache\n");
-			clear_cache();
+			//clear_cache();
 		}
 	}
 	else{
@@ -261,34 +229,40 @@ void create_process(char* arquivo, u_int sleeper){
 	FILE*		file;
 	int 		blockcount = 0;
 	double 		sleep_timer;
-	bool		page_faulted;
 
 	file 		= EH_fopen(arquivo,"r");
 	pid 		= getpid();
 	sleep_timer = ((double)sleeper)/100;
+	EH_signal( SIGUSR2, sig_handler_child);
 
 	sleep(1);
-	EH_signal( SIGUSR2, sig_handler_child);
-	page_faulted = false;
-
 	printf("Criando processo [%d]\n", getpid());
 	while(fscanf(file,"%x %c ", &addr, &rw) != 0){
+		//sleep_nano(sleeper); acho bom colocar para garntir que haja a alternancia entre os processos
 		i = to_side(addr, _left_);
 		o = to_side(addr, _right_);
-		page_faulted = !trans(pid,i,o,rw);
-		if(page_faulted){
-			semaforoP( semId );
+
+		if(!trans(pid,i,o,rw)){
+			while(shd_info->pid != 0){
+				sleep_ms(sleep_timer);
+				sleeper_extra(pid);
+				if(blockcount > 1000){
+					print "[Page_Fault] Preso num Deadlock - [ %d ]\n", shd_info->pid);
+					sleep(1);
+				}
+				blockcount++;
+				if(blockcount % 10 == 0){
+					if(shd_info->pid == getpid()){
+						break;
+					}
+				}
+			}
 			print "Liberando\n");
 			lock_info(getpid(), i,rw);
 			kill(getppid(), SIGUSR1);
 			sleep(1);
 		}
-		sleeper_extra(sleep_timer);
-
-		if(page_faulted){
-			sleep(1);
-			page_faulted = !page_faulted;
-		}
+		sleep_ms(sleep_timer);
 	}
 	fclose(file);
 }
@@ -304,6 +278,10 @@ void sig_handler(int signal){
 	u_int		aux;
 	u_char		wr;
 
+	if(!isLocked_info()){
+		print "Recebido Sinal [%d] sinal enquanto processo bloqueado.\n\n\n\n");
+		return;
+	}
 	pid		= shd_info->pid;
 	vt_page	= shd_info->virtual_page;
 
@@ -329,10 +307,12 @@ void sig_handler(int signal){
 			swap2_table	= get_table(vPhysicalMemory[frame]->pid);
 			for(i = 0; i < _max_pages_ ; i++){
 				if( getbytes(swap2_table[i],4) == getbytes(frame,4) )
+				//if( (u_char) swap2_table[i] == frame) /*possivel erro*/
 				{
 					break;
 				}
 			}
+			//wr = //( swap2_table[i] & 0x0000ff00 ) >> 2; //testar
 			wr = (getbytes(swap2_table[i], 3)) >> 2;
 			if(wr == 0x01){
 				kill(vPhysicalMemory[frame]->pid,SIGUSR2);
@@ -348,18 +328,32 @@ void sig_handler(int signal){
 		vPhysicalMemory[frame]->virtual_page = vt_page;
 		vPhysicalMemory[frame]->wr = shd_info->wr;
 
-		table[pos]= ((u_int)vt_page) << 16;
+		for(i=0; i < _max_pages_ ; i++){
+			if(vPhysicalMemory[i] != NULL){
+				printf("[%d][%x][%c]\n", vPhysicalMemory[i]->pid,vPhysicalMemory[i]->virtual_page,vPhysicalMemory[i]->wr);
+			}/*
+			else{
+				printf("=\t");
+			}*/
+		}
+		printf("\n");
+		sleep(1);
 
-		aux = (u_int)frame; 
+		/*
+			Salva na tabela do processo.
+		*/
+		table[pos]= ( (u_int)vt_page << 16 ) & 0xffff0000;
+
+		aux = (u_int)frame; // ??????????
 
 		if(shd_info->wr == true){
 			aux |= 0x00000100;
 		}
-		table[pos] = table[pos] + aux;
+		table[pos] = table[pos] & aux;
 		access_addr( table[pos] & 0x000000ff);
 		print "Liberando processo: %d\n", pid);
 		kill(pid, SIGCONT);
-		semaforoV( semId );
+		unlock_info();
 	}
 	else{
 		print "Invalid Signal\n");
@@ -376,42 +370,50 @@ void sig_handler_child(int signal){
 u_int** create_shared_matrix(u_int nTables, u_int tableSize){
 	int 	i,j;
 	u_int**	table__;
-	int 	seg;// = EH_shmget(IPC_PRIVATE, nTables * sizeof(u_int*), _flags_);
-	//table__ = EH_shmat( seg , 0 , 0 );
-	table__ = (u_int**)malloc(sizeof(u_int*) * nTables);
+	int 	seg = EH_shmget(IPC_PRIVATE, nTables * sizeof(u_int), _flags_);
+	table__ = EH_shmat( seg , 0 , 0 );
 	for(i = 0; i < nTables; i++ ){
-		seg = EH_shmget(IPC_PRIVATE, (tableSize) * sizeof(u_int), _flags_);
+		seg = EH_shmget(IPC_PRIVATE, (1 + tableSize) * sizeof(u_int), _flags_);
 		table__[i] = EH_shmat( seg , 0 , 0 );
-		for(j = 0; j < tableSize; j++){
-			table__[i][j] = 0xFFFFFFFF;
+		for(j=0; j < tableSize + 1; j++){
+			table__[i][j] = 0;
 		}
 	}
 	return table__;	
 }
 
 bool trans(pid_t pid, u_short i, u_short offset, char rw){
-	u_int* 	table = tables__[numero_do_processo];
+	int* 	table = get_table(pid);
 	Fault_Info information;
 	u_int	entry = look_table(table, i, _left_);
 	long	sleeper = (long)(pid & 0x00000FFF);
 	int 	lockcount = 0;
 
-	//printf("Numero do Processo: [%d]\n",numero_do_processo);
+	int out,k;
+	//printf("\n\nTabela(%d)\n",pid);
+	for(out = 0; out < _max_pages_; out++){
+		table[out]++;
+		//printf("%d ", table[out]);
+	}
+	//printf("\n");
+	//printf("Antes: %x\n", i);
+	//printf("Depois: %04x\n\n", entry);
 	if(entry == _max_){
-		print "(%d) Endereço virtual nao encontrado na tabela. Lancando Page-Fault.\n", pid);
-		printf("(%d) Endereço virtual nao encontrado na tabela. Lancando Page-Fault\n", pid);
+		print "Endereço virtual nao encontrado na tabela. Lancando Page-Fault.\n");
 		return false;
 	}
 	else {
 		//se sim, imprime:
-		printf("(%d):\t%-02d\t%04x\t%c\n", pid, entry, offset, rw);
+		print "%d, %04x, %04x, %c\n", pid, entry, offset, rw);
 		//tenho q colocar pra se o acesso for de escrita mudar os bytes marcados com A 0x0000AA00 A para 01 escrita 
 		//inicialmente se for aberto somente pra leitura ele vai estar 00 entao precisa mudar por causa do swap2
-		while(accessed_info->pid != 0){
-			lockcount++;
-			//sleeper_extra(pid/2);
-			if(lockcount > 1000){
-				print "[Access] Preso em um Deadlock. - [ %d ]\n", accessed_info->pid);
+		if(accessed_info->pid != 0){
+			while(accessed_info->pid != 0){
+				lockcount++;
+				sleep_ms(1);
+				if(lockcount > 1000){
+					print "[Access] Preso em um Deadlock. - [ %d ]\n", accessed_info->pid);
+				}
 			}
 		}
 		accessed_info->pid = pid;
@@ -424,9 +426,9 @@ u_int look_table(u_int* table, u_short number, int side){
 	int 	i;
 	u_int 	entry;
 	for(i = 0; i < _max_pages_; i++ ) {
-		entry = to_side(table[i],side);
-		if ((u_short)entry == number){ //to_side(entry, side) se achar o numero, retorna o valor do outro lado do vetor de bits.
-			return to_side(table[i], ~side);
+		entry = table[i] & side; // entry = 16 bits do $side de table[i]
+		if (to_side(entry, side) == number){ // se achar o numero, retorna o valor do outro lado do vetor de bits.
+			return to_side(entry, ~side);
 		}
 	}
 	return _max_;		
@@ -436,8 +438,8 @@ u_int* get_table(pid_t pid){
 	int i = INV_INDEX;
 	int index = INV_INDEX;
 	for (i = 0 ; i < _n_of_process_ ; i++){
-		if(pid == pid_processos[i]){
-			return tables__[i];
+		if(pair_pid[i][PID_] = pid){
+			return tables__[pair_pid[i][TABLE_]];
 		}
 	}
 	print "Tabela não encontrada.\n");
@@ -459,7 +461,7 @@ u_short to_side(u_int valor, int side){
 int find_empty_spot(u_int* table){
 	int i;
 	for(i = 0; i < _max_pages_ ; i++ ){
-		if(table[i] == _max_){
+		if(table[i] == 0){
 			return i;
 		}
 	}
@@ -537,51 +539,4 @@ void sleeper_extra(int val){
 	int timer = ((11*(val * val) + val)) & 0x0000FFFF;
 	int i;
 	for(i=0; i < timer; i++);
-}
-int setSemValue( int semId )
-{
-	union semun semUnion;
-
-	semUnion.val = 1;
-
-	return semctl( semId, 0, SETVAL, semUnion );
-}
-
-
-
-void delSemValue( int semId )
-{
-	union semun semUnion;
-
-	semctl( semId, 0, IPC_RMID, semUnion );
-}
-
-
-
-int semaforoP( int semId )
-{
-	struct sembuf semB;
-
-	semB.sem_num =  0;
-	semB.sem_op  = -1;
-	semB.sem_flg = SEM_UNDO;
-
-	semop( semId, &semB, 1 );
-
-	return 0;
-}
-
-
-
-int semaforoV(int semId)
-{
-	struct sembuf semB;
-
-	semB.sem_num = 0;
-	semB.sem_op  = 1;
-	semB.sem_flg = SEM_UNDO;
-
-	semop( semId, &semB, 1 );
-
-	return 0;
 }

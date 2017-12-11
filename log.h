@@ -15,12 +15,7 @@
  * 
  */
 
-#define __PRINT__
-#ifdef __PRINT__
-static unsigned int __debugLevel__ = 0; 
-#else
-static unsigned int __debugLevel__ = 10000; 
-#endif
+//#define __PRINT__
 
 #define PRE __FILE__,__func__
 

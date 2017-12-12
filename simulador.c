@@ -269,7 +269,7 @@ void create_process(char* arquivo, u_int sleeper){
 
 	sleep(1);
 	EH_signal( SIGUSR2, sig_handler_child);
-	EH_signal(32, sig_handler);
+	EH_signal( SIGUSR1, sig_handler_child);
 	page_faulted = false;
 
 	printf("Criando processo [%d]\n", getpid());
@@ -288,7 +288,8 @@ void create_process(char* arquivo, u_int sleeper){
 		//sleeper_extra(sleep_timer);
 
 		if(page_faulted){
-			sleep(1);
+			//sleep(1);
+			usleep(100000);
 			page_faulted = !page_faulted;
 		}
 	}
@@ -324,8 +325,6 @@ void sig_handler(int signal){
 			/*
 				Só faz swap se nao tiver espaço na memória física.
 			*/
-			printf( "Iniciando processo de Swap.\n");
-
 			frame 		= get_least_frequency();
 			printf( "Frame com menor frequencia[%d].\n",frame);
 			if(vPhysicalMemory[frame] == NULL){
@@ -341,10 +340,12 @@ void sig_handler(int signal){
 				}
 			}
 			wr = (getbytes(swap2_table[i], 3)) >> 2;
-			if(wr == 0x01){
+			//printf("addr: %x wr: %x\n",swap2_table[i],wr);
+			if(wr != 0){
 				kill(vPhysicalMemory[frame]->pid,SIGUSR2);
-				swap2_table[i] = 0xffffffff;
+				//kill(pid,SIGUSR1);
 			}
+			swap2_table[i] = 0xffffffff;
 			print "Iniciando processo de Swap.\n");
 			free(vPhysicalMemory[frame]);
 		}
@@ -379,8 +380,8 @@ void sig_handler_child(int signal){
 		print "Recebido [ SIGUSR2 ]\n");
 	}
 	else{
-		printf("vai ter q salvar primeiro na memoria fisica, espere!!");
-		sleep(2);
+		printf("vai ter q salvar primeiro na memoria fisica, espere!!\n----------\n---------\n----\n");
+		sleep(1);
 	}
 }
 
@@ -414,6 +415,9 @@ bool trans(pid_t pid, u_short i, u_short offset, char rw){
 		return false;
 	}
 	else {
+		if(rw=='W'){
+			table[entry]=table[entry]|0x00000100;
+		}
 		access_addr( table[entry] & 0x000000ff);
 		//se sim, imprime:
 		printf("(%d):\t%-02d\t%04x\t%c\n", pid, table[entry] & 0x000000ff, offset, rw);

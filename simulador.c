@@ -88,6 +88,7 @@ Fault_Info** vPhysicalMemory;
 int 		my_table;
 int numero_do_processo;
 int pid_processos[4];
+int numero_de_pagefaults;
 //---->> Funções utilizadas
 
 /*
@@ -188,9 +189,8 @@ int main(void){
 	pid_t		pid, pid_timer;
 	char 		*process_names[100] = { "compilador.log" , "compressor.log" , "matriz.log" , "simulador.log" };
 	long		start, elapsed;
-	
 	tables__ = create_shared_matrix( _n_of_process_ , _max_pages_ );
-
+	numero_de_pagefaults=0;
 	vPhysicalMemory = (Fault_Info**)malloc(_max_pages_ * sizeof(Fault_Info*));
 
 	EH_signal(SIGUSR1, sig_handler);
@@ -273,6 +273,7 @@ void create_process(char* arquivo, u_int sleeper){
 
 	printf("Criando processo [%d]\n", getpid());
 	while(fscanf(file,"%x %c ", &addr, &rw) != 0){
+		usleep(10);
 		i = to_side(addr, _left_);
 		o = to_side(addr, _right_);
 		page_faulted = !trans(pid,i,o,rw);
@@ -281,9 +282,9 @@ void create_process(char* arquivo, u_int sleeper){
 			print "Liberando\n");
 			lock_info(getpid(), i,rw);
 			kill(getppid(), SIGUSR1);
-			sleep(1);
+			usleep(10);
 		}
-		sleeper_extra(sleep_timer);
+		//sleeper_extra(sleep_timer);
 
 		if(page_faulted){
 			sleep(1);
@@ -316,11 +317,16 @@ void sig_handler(int signal){
 		//find_empty_spot retorna um index na tabela. Frame = o index?
 
 		pos		= find_empty_spot(table);
+		numero_de_pagefaults++;
+		printf("numero de pagefaults: %d\n",numero_de_pagefaults);
 		if(frame == INV_INDEX){
 			/*
 				Só faz swap se nao tiver espaço na memória física.
 			*/
+			printf( "Iniciando processo de Swap.\n");
+
 			frame 		= get_least_frequency();
+			printf( "Frame com menor frequencia[%d].\n",frame);
 			if(vPhysicalMemory[frame] == NULL){
 				print "Tentativa de acessar um frame nao inicializado.\n");
 				unlock_info();
@@ -339,6 +345,7 @@ void sig_handler(int signal){
 				swap2_table[i] = 0xffffffff;
 			}
 			print "Iniciando processo de Swap.\n");
+			free(vPhysicalMemory[frame]);
 		}
 		/*
 			Salva na memória física.
@@ -392,19 +399,20 @@ u_int** create_shared_matrix(u_int nTables, u_int tableSize){
 bool trans(pid_t pid, u_short i, u_short offset, char rw){
 	u_int* 	table = tables__[numero_do_processo];
 	Fault_Info information;
-	u_int	entry = look_table(table, i, _left_);
+	int	entry = look_table(table, i, _left_);
 	long	sleeper = (long)(pid & 0x00000FFF);
 	int 	lockcount = 0;
 
 	//printf("Numero do Processo: [%d]\n",numero_do_processo);
-	if(entry == _max_){
+	if(entry ==-1){
 		print "(%d) Endereço virtual nao encontrado na tabela. Lancando Page-Fault.\n", pid);
 		printf("(%d) Endereço virtual nao encontrado na tabela. Lancando Page-Fault\n", pid);
 		return false;
 	}
 	else {
+		access_addr( table[entry] & 0x000000ff);
 		//se sim, imprime:
-		printf("(%d):\t%-02d\t%04x\t%c\n", pid, entry, offset, rw);
+		printf("(%d):\t%-02d\t%04x\t%c\n", pid, table[entry] & 0x000000ff, offset, rw);
 		//tenho q colocar pra se o acesso for de escrita mudar os bytes marcados com A 0x0000AA00 A para 01 escrita 
 		//inicialmente se for aberto somente pra leitura ele vai estar 00 entao precisa mudar por causa do swap2
 		while(accessed_info->pid != 0){
@@ -426,10 +434,10 @@ u_int look_table(u_int* table, u_short number, int side){
 	for(i = 0; i < _max_pages_; i++ ) {
 		entry = to_side(table[i],side);
 		if ((u_short)entry == number){ //to_side(entry, side) se achar o numero, retorna o valor do outro lado do vetor de bits.
-			return to_side(table[i], ~side);
+			return i;
 		}
 	}
-	return _max_;		
+	return -1;		
 }
 
 u_int* get_table(pid_t pid){

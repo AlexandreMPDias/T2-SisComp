@@ -269,6 +269,7 @@ void create_process(char* arquivo, u_int sleeper){
 
 	sleep(1);
 	EH_signal( SIGUSR2, sig_handler_child);
+	EH_signal(32, sig_handler);
 	page_faulted = false;
 
 	printf("Criando processo [%d]\n", getpid());
@@ -376,6 +377,9 @@ void sig_handler(int signal){
 void sig_handler_child(int signal){
 	if(signal == SIGUSR2){
 		print "Recebido [ SIGUSR2 ]\n");
+	}
+	else{
+		printf("vai ter q salvar primeiro na memoria fisica, espere!!");
 		sleep(2);
 	}
 }

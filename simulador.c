@@ -217,6 +217,7 @@ int main(void){
 		exit( 1 );
 	}
 	print "Iniciando\n");
+	create_cache();
 	for( i = 0 ; i < _n_of_process_; i++ ){
 
 		numero_do_processo=i;
@@ -238,7 +239,8 @@ int main(void){
 	if(pid_timer > 0){
 		while(true){
 			print "Dormindo por [ %3.2lf ]ms\n", SLEEP_TIMER);
-			sleep_ms(SLEEP_TIMER * 10);
+			//sleep_ms(SLEEP_TIMER * 10);
+			usleep(600);
 			print "Liberando Cache\n");
 			clear_cache();
 		}
@@ -289,7 +291,7 @@ void create_process(char* arquivo, u_int sleeper){
 
 		if(page_faulted){
 			//sleep(1);
-			usleep(100000);
+			usleep(300000);/* so pra ir mais rapido*/
 			page_faulted = !page_faulted;
 		}
 	}
